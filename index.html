@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Startup Agro - Angola</title>
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --primary-dark: #1b5e20;
+            --secondary: #0288d1;
+            --bg-color: #f0f4f1;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 15px;
+            color: var(--text-main);
+        }
+        .app-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+        }
+        header h1 { margin: 0; font-size: 24px; }
+        header p { margin: 5px 0 0 0; font-size: 14px; opacity: 0.9; }
+
+        .card-section {
+            background: var(--card-bg);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .card-section h2 {
+            font-size: 18px;
+            color: var(--primary);
+            margin-top: 0;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+        .card-section.blue h2 {
+            color: var(--secondary);
+            border-bottom-color: #b3e5fc;
+        }
+
+        input, select, button, label {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 15px;
+            box-sizing: border-box;
+            background-color: #fafafa;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: #fff;
+        }
+        .file-label {
+            background-color: #e8f5e9;
+            color: var(--primary-dark);
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            border: 1px dashed var(--primary);
+            display: block;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: var(--primary-dark); }
+        button.btn-blue { background-color: var(--secondary); }
+        button.btn-blue:hover { background-color: #01579b; }
+
+        .item-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-left: 5px solid var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .item-card.blue { border-left-color: var(--secondary); display: block; }
+        .item-img {
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        .item-info { flex-grow: 1; }
+        .item-info h4 { margin: 0 0 5px 0; font-size: 17px; color: var(--text-main); }
+        .item-info p { margin: 3px 0; font-size: 14px; color: var(--text-muted); }
+        .tag-preco { font-weight: bold; color: #e65100; font-size: 16px; }
+        .tag-contacto { font-weight: bold; color: #d32f2f; }
+        .hidden { display: none !important; }
+
+        .user-badge {
+            background: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: var(--primary-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>🌱 Startup Agro</h1>
+            <p>Conectando Agricultores e Compradores em Angola</p>
+        </header>
+
+        <!-- ECRÃ DE LOGIN -->
+        <div id="seccaoLogin" class="card-section">
+            <h2>🔐 Entrar na Plataforma</h2>
+            <p style="font-size: 14px; color: #666;">Selecione o seu perfil para começar:</p>
+            <form onsubmit="fazerLogin(event)">
+                <input type="text" id="loginNome" placeholder="Seu Nome ou Fazenda" required>
+                <select id="loginTipo" required>
+                    <option value="">Selecione o Perfil</option>
+                    <option value="agricultor">🌾 Sou Agricultor (Vendedor)</option>
+                    <option value="comprador">🛒 Sou Comprador (Cliente)</option>
+                </select>
+                <button type="submit">Entrar no Sistema</button>
+            </form>
+        </div>
+
+        <!-- APLICAÇÃO PRINCIPAL -->
+        <div id="seccaoApp" class="hidden">
+            <div class="user-badge">
+                <div>👤 <span id="spanUtilizador"></span> (<strong id="spanTipoPerfil"></strong>)</div>
+                <button onclick="terminarSessao()" style="width: auto; padding: 6px 12px; margin: 0; font-size: 12px; background: #d32f2f;">Sair</button>
+            </div>
+
+            <!-- PAINEL DO AGRICULTOR -->
+            <div id="painelAgricultor" class="card-section hidden">
+                <h2>🌾 Publicar Produto com Foto</h2>
+                <form id="formProduto" onsubmit="registarProduto(event)">
+                    <input type="text" id="produtoNome" placeholder="Nome do Produto (ex: Tomate, Batata)" required>
+                    <input type="text" id="produtoPreco" placeholder="Preço (ex: 2000 Kz)" required>
+                    <input type="text" id="produtoQtd" placeholder="Quantidade (ex: 50 sacos)">
+                    <select id="provinciaVendedor" required>
+                        <option value="">Selecione a Província</option>
+                        <option value="Bengo">Bengo</option>
+                        <option value="Benguela">Benguela</option>
+                        <option value="Bié">Bié</option>
+                        <option value="Cabinda">Cabinda</option>
+                        <option value="Cuando Cubango">Cuando Cubango</option>
+                        <option value="Cuanza Norte">Cuanza Norte</option>
+                        <option value="Cuanza Sul">Cuanza Sul</option>
+                        <option value="Cunene">Cunene</option>
+                        <option value="Huambo">Huambo</option>
+                        <option value="Huíla">Huíla</option>
+                        <option value="Luanda">Luanda</option>
+                        <option value="Lunda Norte">Lunda Norte</option>
+                        <option value="Lunda Sul">Lunda Sul</option>
+                        <option value="Malanje">Malanje</option>
+                        <option value="Namibe">Namibe</option>
+                        <option value="Uíge">Uíge</option>
+                        <option value="Zaire">Zaire</option>
+                    </select>
+                    <label for="produtoImagem" class="file-label">📷 Tirar / Escolher Foto do Produto</label>
+                    <input type="file" id="produtoImagem" accept="image/*" style="display: none;">
+                    <button type="submit">Publicar Produto</button>
+                </form>
+            </div>
+
+            <!-- PAINEL DO COMPRADOR -->
+            <div id="painelComprador" class="card-section blue hidden">
+                <h2>📢 Publicar Necessidade de Compra</h2>
+                <form id="formPreciso" onsubmit="registarNecessidade(event)">
+                    <input type="text" id="produtoDesejado" placeholder="Produto que procura (ex: Milho)" required>
+                    <input type="text" id="qtdDesejada" placeholder="Quantidade desejada (ex: 20 sacos)">
+                    <select id="provinciaComprador" required>
+                        <option value="">Selecione a Província</option>
+                        <option value="Bengo">Bengo</option>
+                        <option value="Benguela">Benguela</option>
+                        <option value="Bié">Bié</option>
+                        <option value="Cabinda">Cabinda</option>
+                        <option value="Cuando Cubango">Cuando Cubango</option>
+                        <option value="Cuanza Norte">Cuanza Norte</option>
+                        <option value="Cuanza Sul">Cuanza Sul</option>
+                        <option value="Cunene">Cunene</option>
+                        <option value="Huambo">Huambo</option>
+                        <option value="Huíla">Huíla</option>
+                        <option value="Luanda">Luanda</option>
+                        <option value="Lunda Norte">Lunda Norte</option>
+                        <option value="Lunda Sul">Lunda Sul</option>
+                        <option value="Malanje">Malanje</option>
+                        <option value="Namibe">Namibe</option>
+                        <option value="Uíge">Uíge</option>
+                        <option value="Zaire">Zaire</option>
+                    </select>
+                    <input type="text" id="contactoComprador" placeholder="Seu Telefone / WhatsApp" required>
+                    <button type="submit" class="btn-blue">Publicar Necessidade</button>
+                </form>
+            </div>
+
+            <!-- MERCADO -->
+            <div class="card-section">
+                <h2>🛒 Produtos Disponíveis no Mercado</h2>
+                <input type="text" id="filtroProduto" placeholder="Pesquisar produto...">
+                <select id="filtroProvincia" onchange="carregarProdutos()">
+                    <option value="">Todas as Províncias</option>
+                    <option value="Bengo">Bengo</option>
+                    <option value="Benguela">Benguela</option>
+                    <option value="Bié">Bié</option>
+                    <option value="Cabinda">Cabinda</option>
+                    <option value="Cuando Cubango">Cuando Cubango</option>
+                    <option value="Cuanza Norte">Cuanza Norte</option>
+                    <option value="Cuanza Sul">Cuanza Sul</option>
+                    <option value="Cunene">Cunene</option>
+                    <option value="Huambo">Huambo</option>
+                    <option value="Huíla">Huíla</option>
+                    <option value="Luanda">Luanda</option>
+                    <option value="Lunda Norte">Lunda Norte</option>
+                    <option value="Lunda Sul">Lunda Sul</option>
+                    <option value="Malanje">Malanje</option>
+                    <option value="Namibe">Namibe</option>
+                    <option value="Uíge">Uíge</option>
+                    <option value="Zaire">Zaire</option>
+                </select>
+                <button onclick="carregarProdutos()">Filtrar Mercado</button>
+                <div id="listaProdutos" style="margin-top: 15px;">
+                    <p style="text-align: center; color: var(--text-muted);">A carregar...</p>
+                </div>
+            </div>
+
+            <!-- MURAL -->
+            <div class="card-section blue">
+                <h2>📋 Mural de Necessidades</h2>
+                <select id="filtroProvinciaPreciso" onchange="carregarPrecisos()">
+                    <option value="">Todas as Províncias (Pedidos)</option>
+                    <option value="Bengo">Bengo</option>
+                    <option value="Benguela">Benguela</option>
+                    <option value="Bié">Bié</option>
+                    <option value="Cabinda">Cabinda</option>
+                    <option value="Cuando Cubango">Cuando Cubango</option>
+                    <option value="Cuanza Norte">Cuanza Norte</option>
+                    <option value="Cuanza Sul">Cuanza Sul</option>
+                    <option value="Cunene">Cunene</option>
+                    <option value="Huambo">Huambo</option>
+                    <option value="Huíla">Huíla</option>
+                    <option value="Luanda">Luanda</option>
+                    <option value="Lunda Norte">Lunda Norte</option>
+                    <option value="Lunda Sul">Lunda Sul</option>
+                    <option value="Malanje">Malanje</option>
+                    <option value="Namibe">Namibe</option>
+                    <option value="Uíge">Uíge</option>
+                    <option value="Zaire">Zaire</option>
+                </select>
+                <div id="listaPrecisos" style="margin-top: 15px;">
+                    <p style="text-align: center; color: var(--text-muted);">A carregar mural...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:3000';
+        let utilizadorAtual = null;
+
+        function fazerLogin(e) {
+            e.preventDefault();
+            const nome = document.getElementById('loginNome').value.trim();
+            const tipo = document.getElementById('loginTipo').value;
+            if (!nome || !tipo) return;
+
+            utilizadorAtual = { nome, tipo };
+            localStorage.setItem('agro_user', JSON.stringify(utilizadorAtual));
+            aplicarSessao();
+        }
+
+        function aplicarSessao() {
+            const salvo = localStorage.getItem('agro_user');
+            if (salvo) {
+                utilizadorAtual = JSON.parse(salvo);
+                document.getElementById('seccaoLogin').classList.add('hidden');
+                document.getElementById('seccaoApp').classList.remove('hidden');
+
+                document.getElementById('spanUtilizador').textContent = utilizadorAtual.nome;
+                document.getElementById('spanTipoPerfil').textContent = utilizadorAtual.tipo === 'agricultor' ? 'Agricultor' : 'Comprador';
+
+                if (utilizadorAtual.tipo === 'agricultor') {
+                    document.getElementById('painelAgricultor').classList.remove('hidden');
+                    document.getElementById('painelComprador').classList.add('hidden');
+                } else {
+                    document.getElementById('painelComprador').classList.remove('hidden');
+                    document.getElementById('painelAgricultor').classList.add('hidden');
+                }
+                carregarProdutos();
+                carregarPrecisos();
+            }
+        }
+
+        function terminarSessao() {
+            localStorage.removeItem('agro_user');
+            utilizadorAtual = null;
+            document.getElementById('seccaoApp').classList.add('hidden');
+            document.getElementById('seccaoLogin').classList.remove('hidden');
+            document.getElementById('loginNome').value = '';
+            document.getElementById('loginTipo').value = '';
+        }
+
+        async function carregarProdutos() {
+            const produto = document.getElementById('filtroProduto').value;
+            const provincia = document.getElementById('filtroProvincia').value;
+            let url = `${API}/produtos?`;
+            if (provincia) url += `provincia=${encodeURIComponent(provincia)}&`;
+            if (produto) url += `produto=${encodeURIComponent(produto)}`;
+
+            try {
+                const res = await fetch(url);
+                const produtos = await res.json();
+                const container = document.getElementById('listaProdutos');
+                container.innerHTML = '';
+                if (produtos.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #666;">Nenhum produto encontrado.</p>';
+                    return;
+                }
+                produtos.forEach(p => {
+                    const imgTag = p.imagem ? `<img src="${API}${p.imagem}" class="item-img" alt="Foto">` : `<div class="item-img" style="display:flex;align-items:center;justify-content:center;background:#eee;font-size:24px;">🌾</div>`;
+                    container.innerHTML += `
+                        <div class="item-card">
+                            ${imgTag}
+                            <div class="item-info">
+                                <h4>${p.produto}</h4>
+                                <p><strong>Vendedor:</strong> ${p.vendedor}</p>
+                                <p class="tag-preco">Preço: ${p.preco}</p>
+                                <p><strong>Qtd:</strong> ${p.quantidade} | <strong>Província:</strong> ${p.provincia}</p>
+                            </div>
+                        </div>`;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function registarProduto(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('vendedor', utilizadorAtual.nome);
+            formData.append('produto', document.getElementById('produtoNome').value);
+            formData.append('preco', document.getElementById('produtoPreco').value);
+            formData.append('quantidade', document.getElementById('produtoQtd').value);
+            formData.append('provincia', document.getElementById('provinciaVendedor').value);
+            
+            const ficheiroInput = document.getElementById('produtoImagem');
+            if (ficheiroInput.files[0]) {
+                formData.append('imagem', ficheiroInput.files[0]);
+            }
+
+            const res = await fetch(`${API}/cadastrar-produto`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const resultado = await res.json();
+            alert(resultado.mensagem || resultado.erro);
+            if (res.ok) {
+                document.getElementById('formProduto').reset();
+                carregarProdutos();
+            }
+        }
+
+        async function carregarPrecisos() {
+            const provincia = document.getElementById('filtroProvinciaPreciso').value;
+            let url = `${API}/precisos`;
+            if (provincia) url += `?provincia=${encodeURIComponent(provincia)}`;
+
+            try {
+                const res = await fetch(url);
+                const precisos = await res.json();
+                const container = document.getElementById('listaPrecisos');
+                container.innerHTML = '';
+                if (precisos.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #666;">Nenhum pedido registado.</p>';
+                    return;
+                }
+                precisos.forEach(p => {
+                    container.innerHTML += `
+                        <div class="item-card blue">
+                            <h4>📢 Procura: ${p.produtoDesejado}</h4>
+                            <p><strong>Comprador:</strong> ${p.comprador} (${p.provincia})</p>
+                            <p><strong>Quantidade:</strong> ${p.quantidade}</p>
+                            <p class="tag-contacto">Contacto: 📞 ${p.contacto}</p>
+                        </div>`;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function registarNecessidade(e) {
+            e.preventDefault();
+            const dados = {
+                comprador: utilizadorAtual.nome,
+                produtoDesejado: document.getElementById('produtoDesejado').value,
+                quantidade: document.getElementById('qtdDesejada').value,
+                provincia: document.getElementById('provinciaComprador').value,
+                contacto: document.getElementById('contactoComprador').value
+            };
+
+            const res = await fetch(`${API}/precisos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            const resultado = await res.json();
+            alert(resultado.mensagem || resultado.erro);
+            if (res.ok) {
+                document.getElementById('formPreciso').reset();
+                carregarPrecisos();
+            }
+        }
+
+        window.onload = () => {
+            aplicarSessao();
+        };
+    </script>
+</body>
+</html>
