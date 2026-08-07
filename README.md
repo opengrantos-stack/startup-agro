@@ -1,6 +1,2 @@
-# Startup Agro
-
-Plataforma digital para otimizar o comércio agrícola, conectando produtores e compradores em Angola para reduzir o desperdício alimentar.
-
-## Link Live (Render)
-https://startup-agro.onrender.com
+# Startup-Agro
+A digital platform designed to optimize agricultural commerce and connect producers directly with buyers to reduce food waste.
