@@ -193,8 +193,12 @@
                         <option value="Uíge">Uíge</option>
                         <option value="Zaire">Zaire</option>
                     </select>
-                    <label for="produtoImagem" class="file-label">📷 Tirar / Escolher Foto do Produto</label>
-                    <input type="file" id="produtoImagem" accept="image/*" capture="environment" style="display: none;">
+                    <label for="cameraInput" class="file-label">📷 Tirar Foto</label>
+                    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+
+                    <label for="galleryInput" class="file-label">🖼️ Escolher da Galeria</label>
+                    <input type="file" id="galleryInput" accept="image/*" style="display: none;">
+
                     <button type="submit">Publicar Produto</button>
                 </form>
             </div>
@@ -380,9 +384,12 @@
             formData.append('quantidade', document.getElementById('produtoQtd').value);
             formData.append('provincia', document.getElementById('provinciaVendedor').value);
             
-            const ficheiroInput = document.getElementById('produtoImagem');
-            if (ficheiroInput.files[0]) {
-                formData.append('imagem', ficheiroInput.files[0]);
+            const cameraInput = document.getElementById('cameraInput');
+            const galleryInput = document.getElementById('galleryInput');
+            const ficheiro = cameraInput.files[0] || galleryInput.files[0];
+
+            if (ficheiro) {
+                formData.append('imagem', ficheiro);
             }
 
             const res = await fetch(`${API}/cadastrar-produto`, {
