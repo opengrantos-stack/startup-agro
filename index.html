@@ -365,7 +365,10 @@
                             </div>
                         </div>`;
                 });
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                document.getElementById('listaProdutos').innerHTML =
+                    '<p>Erro ao carregar produtos: ' + e.message + '</p>';
+            }
         }
 
         async function registarProduto(e) {
