@@ -105,11 +105,91 @@ async function criarTabelas() {
     console.log('POSTGRES: tabelas verificadas/criadas.');
 }
 
-criarTabelas().catch(error => {
-    console.error('POSTGRES ERRO AO CRIAR TABELAS:', error.message);
-});
+
+async function migrarDadosExistentes() {
+    try {
+        const produtosCount = await pool.query('SELECT COUNT(*) FROM produtos');
+
+        if (Number(produtosCount.rows[0].count) === 0 && baseDados.produtos.length > 0) {
+            for (const produto of baseDados.produtos) {
+                await pool.query(
+                    `INSERT INTO produtos
+                    (id, vendedor, produto, preco, quantidade, provincia, contacto, imagem, data)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    ON CONFLICT (id) DO NOTHING`,
+                    [
+                        produto.id,
+                        produto.vendedor,
+                        produto.produto,
+                        produto.preco,
+                        produto.quantidade || '1',
+                        produto.provincia,
+                        produto.contacto || '',
+                        produto.imagem || '',
+                        produto.data || new Date().toISOString()
+                    ]
+                );
+            }
+
+            await pool.query(`
+                SELECT setval(
+                    pg_get_serial_sequence('produtos', 'id'),
+                    COALESCE((SELECT MAX(id) FROM produtos), 1)
+                )
+            `);
+
+            console.log('POSTGRES: produtos existentes migrados.');
+        }
+
+        const precisosCount = await pool.query('SELECT COUNT(*) FROM precisos');
+
+        if (Number(precisosCount.rows[0].count) === 0 && baseDados.precisos.length > 0) {
+            for (const pedido of baseDados.precisos) {
+                await pool.query(
+                    `INSERT INTO precisos
+                    (id, comprador, produto_desejado, quantidade, provincia, contacto, data)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    ON CONFLICT (id) DO NOTHING`,
+                    [
+                        pedido.id,
+                        pedido.comprador,
+                        pedido.produtoDesejado,
+                        pedido.quantidade || '1',
+                        pedido.provincia,
+                        pedido.contacto,
+                        pedido.data || new Date().toISOString()
+                    ]
+                );
+            }
+
+            await pool.query(`
+                SELECT setval(
+                    pg_get_serial_sequence('precisos', 'id'),
+                    COALESCE((SELECT MAX(id) FROM precisos), 1)
+                )
+            `);
+
+            console.log('POSTGRES: necessidades existentes migradas.');
+        }
+
+    } catch (error) {
+        console.error('POSTGRES ERRO NA MIGRAÇÃO:', error.message);
+    }
+}
 
 let baseDados = carregarDados();
+
+async function inicializarBanco() {
+    try {
+        await criarTabelas();
+        await migrarDadosExistentes();
+        console.log('POSTGRES: inicialização concluída.');
+    } catch (error) {
+        console.error('POSTGRES ERRO NA INICIALIZAÇÃO:', error.message);
+    }
+}
+
+inicializarBanco();
 
 app.get('/produtos', async (req, res) => {
     try {
