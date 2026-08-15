@@ -76,55 +76,180 @@ function guardarDados(dados) {
     fs.writeFileSync(FICHEIRO_DADOS, JSON.stringify(dados, null, 2), 'utf8');
 }
 
+
+async function criarTabelas() {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS produtos (
+            id SERIAL PRIMARY KEY,
+            vendedor TEXT NOT NULL,
+            produto TEXT NOT NULL,
+            preco TEXT NOT NULL,
+            quantidade TEXT,
+            provincia TEXT NOT NULL,
+            contacto TEXT,
+            imagem TEXT,
+            data TIMESTAMPTZ DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS precisos (
+            id SERIAL PRIMARY KEY,
+            comprador TEXT NOT NULL,
+            produto_desejado TEXT NOT NULL,
+            quantidade TEXT,
+            provincia TEXT NOT NULL,
+            contacto TEXT NOT NULL,
+            data TIMESTAMPTZ DEFAULT NOW()
+        );
+    `);
+
+    console.log('POSTGRES: tabelas verificadas/criadas.');
+}
+
+criarTabelas().catch(error => {
+    console.error('POSTGRES ERRO AO CRIAR TABELAS:', error.message);
+});
+
 let baseDados = carregarDados();
 
-app.get('/produtos', (req, res) => {
-    let p = baseDados.produtos;
-    const { provincia, produto } = req.query;
-    if (provincia) p = p.filter(x => x.provincia.toLowerCase() === provincia.toLowerCase());
-    if (produto) p = p.filter(x => x.produto.toLowerCase().includes(produto.toLowerCase()));
-    res.json(p);
+app.get('/produtos', async (req, res) => {
+    try {
+        let query = 'SELECT * FROM produtos';
+        const valores = [];
+        const filtros = [];
+
+        const { provincia, produto } = req.query;
+
+        if (provincia) {
+            valores.push(provincia);
+            filtros.push(`provincia ILIKE $${valores.length}`);
+        }
+
+        if (produto) {
+            valores.push(`%${produto}%`);
+            filtros.push(`produto ILIKE $${valores.length}`);
+        }
+
+        if (filtros.length) {
+            query += ' WHERE ' + filtros.join(' AND ');
+        }
+
+        query += ' ORDER BY id DESC';
+
+        const resultado = await pool.query(query, valores);
+
+        res.json(resultado.rows);
+
+    } catch (error) {
+        console.error('ERRO AO CARREGAR PRODUTOS:', error.message);
+        res.status(500).json({ erro: 'Erro ao carregar produtos.' });
+    }
 });
+
 
 // Rota de cadastro com suporte a imagem
-app.post('/cadastrar-produto', upload.single('imagem'), (req, res) => {
-    const { vendedor, produto, preco, quantidade, provincia, contacto } = req.body;
-    if (!vendedor || !produto || !preco || !provincia) {
-        return res.status(400).json({ erro: 'Preencha todos os campos obrigatórios.' });
+app.post('/cadastrar-produto', upload.single('imagem'), async (req, res) => {
+    try {
+        const { vendedor, produto, preco, quantidade, provincia, contacto } = req.body;
+
+        if (!vendedor || !produto || !preco || !provincia || !contacto) {
+            return res.status(400).json({ erro: 'Preencha todos os campos obrigatórios.' });
+        }
+
+        const caminhoImagem = req.file ? `/uploads/${req.file.filename}` : '';
+
+        const resultado = await pool.query(
+            `INSERT INTO produtos
+            (vendedor, produto, preco, quantidade, provincia, contacto, imagem)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING *`,
+            [
+                vendedor,
+                produto,
+                preco,
+                quantidade || '1',
+                provincia,
+                contacto,
+                caminhoImagem
+            ]
+        );
+
+        res.status(201).json({
+            mensagem: 'Produto guardado com sucesso!',
+            produto: resultado.rows[0]
+        });
+
+    } catch (error) {
+        console.error('ERRO AO GUARDAR PRODUTO:', error.message);
+        res.status(500).json({ erro: 'Erro ao guardar o produto.' });
     }
-    const caminhoImagem = req.file ? `/uploads/${req.file.filename}` : '';
-    const novo = {
-        id: baseDados.produtos.length ? baseDados.produtos[baseDados.produtos.length - 1].id + 1 : 1,
-        vendedor, produto, preco, quantidade: quantidade || '1', provincia, contacto,
-        imagem: caminhoImagem,
-        data: new Date().toISOString()
-    };
-    baseDados.produtos.push(novo);
-    guardarDados(baseDados);
-    res.status(201).json({ mensagem: 'Produto guardado com sucesso!', produto: novo });
 });
 
-app.get('/precisos', (req, res) => {
-    let p = baseDados.precisos;
-    const { provincia } = req.query;
-    if (provincia) p = p.filter(x => x.provincia.toLowerCase() === provincia.toLowerCase());
-    res.json(p);
+app.get('/precisos', async (req, res) => {
+    try {
+        let query = 'SELECT id, comprador, produto_desejado AS "produtoDesejado", quantidade, provincia, contacto, data FROM precisos';
+        const valores = [];
+        const filtros = [];
+
+        const { provincia } = req.query;
+
+        if (provincia) {
+            valores.push(provincia);
+            filtros.push(`provincia ILIKE $${valores.length}`);
+        }
+
+        if (filtros.length) {
+            query += ' WHERE ' + filtros.join(' AND ');
+        }
+
+        query += ' ORDER BY id DESC';
+
+        const resultado = await pool.query(query, valores);
+
+        res.json(resultado.rows);
+
+    } catch (error) {
+        console.error('ERRO AO CARREGAR NECESSIDADES:', error.message);
+        res.status(500).json({ erro: 'Erro ao carregar necessidades.' });
+    }
 });
 
-app.post('/precisos', (req, res) => {
-    const { comprador, produtoDesejado, quantidade, provincia, contacto } = req.body;
-    if (!comprador || !produtoDesejado || !provincia || !contacto) {
-        return res.status(400).json({ erro: 'Preencha todos os campos obrigatórios.' });
+app.post('/precisos', async (req, res) => {
+    try {
+        const { comprador, produtoDesejado, quantidade, provincia, contacto } = req.body;
+
+        if (!comprador || !produtoDesejado || !provincia || !contacto) {
+            return res.status(400).json({
+                erro: 'Preencha todos os campos obrigatórios.'
+            });
+        }
+
+        const resultado = await pool.query(
+            `INSERT INTO precisos
+            (comprador, produto_desejado, quantidade, provincia, contacto)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, comprador, produto_desejado AS "produtoDesejado", quantidade, provincia, contacto, data`,
+            [
+                comprador,
+                produtoDesejado,
+                quantidade || '1',
+                provincia,
+                contacto
+            ]
+        );
+
+        res.status(201).json({
+            mensagem: 'Necessidade guardada com sucesso!',
+            pedido: resultado.rows[0]
+        });
+
+    } catch (error) {
+        console.error('ERRO AO GUARDAR NECESSIDADE:', error.message);
+        res.status(500).json({
+            erro: 'Erro ao guardar a necessidade.'
+        });
     }
-    const novo = {
-        id: baseDados.precisos.length ? baseDados.precisos[baseDados.precisos.length - 1].id + 1 : 1,
-        comprador, produtoDesejado, quantidade: quantidade || '1', provincia, contacto,
-        data: new Date().toISOString()
-    };
-    baseDados.precisos.push(novo);
-    guardarDados(baseDados);
-    res.status(201).json({ mensagem: 'Necessidade guardada com sucesso!', pedido: novo });
 });
+
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor com imagens a correr na porta ${PORT}`);
