@@ -4,6 +4,12 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const { Pool } = require('pg');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -45,14 +51,9 @@ if (!fs.existsSync(PASTA_UPLOADS)) {
 }
 
 // Configuração do Multer para guardar imagens com nomes únicos
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, PASTA_UPLOADS),
-    filename: (req, file, cb) => {
-        const unico = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, unico + path.extname(file.originalname));
-    }
+const upload = multer({
+    storage: multer.memoryStorage()
 });
-const upload = multer({ storage: storage });
 
 function carregarDados() {
     if (fs.existsSync(FICHEIRO_DADOS)) {
@@ -235,7 +236,31 @@ app.post('/cadastrar-produto', upload.single('imagem'), async (req, res) => {
             return res.status(400).json({ erro: 'Preencha todos os campos obrigatórios.' });
         }
 
-        const caminhoImagem = req.file ? `/uploads/${req.file.filename}` : '';
+        let caminhoImagem = '';
+
+        if (req.file) {
+            const nomeArquivo = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('Produtos')
+                .upload(nomeArquivo, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error('ERRO SUPABASE UPLOAD:', uploadError.message);
+                return res.status(500).json({
+                    erro: 'Erro ao enviar a imagem.'
+                });
+            }
+
+            const { data: urlData } = supabase.storage
+                .from('Produtos')
+                .getPublicUrl(nomeArquivo);
+
+            caminhoImagem = urlData.publicUrl;
+        }
 
         const resultado = await pool.query(
             `INSERT INTO produtos

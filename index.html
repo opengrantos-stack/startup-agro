@@ -374,7 +374,7 @@
                     return;
                 }
                 produtos.forEach(p => {
-                    const imgTag = p.imagem ? `<img src="${API}${p.imagem}" class="item-img" alt="Foto">` : `<div class="item-img" style="display:flex;align-items:center;justify-content:center;background:#eee;font-size:24px;">🌾</div>`;
+                    const imgTag = p.imagem ? `<img src="${p.imagem}" class="item-img" alt="Foto">` : `<div class="item-img" style="display:flex;align-items:center;justify-content:center;background:#eee;font-size:24px;">🌾</div>`;
                     container.innerHTML += `
                         <div class="item-card">
                             ${imgTag}
