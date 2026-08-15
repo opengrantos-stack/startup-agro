@@ -3,6 +3,18 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const { Pool } = require('pg');
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
+
+pool.query('SELECT NOW()')
+    .then(result => console.log('POSTGRES OK:', result.rows[0].now))
+    .catch(error => console.error('POSTGRES ERRO:', error.message));
+
+
 
 const app = express();
 app.use(express.json());
