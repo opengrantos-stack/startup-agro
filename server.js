@@ -65,14 +65,14 @@ app.get('/produtos', (req, res) => {
 
 // Rota de cadastro com suporte a imagem
 app.post('/cadastrar-produto', upload.single('imagem'), (req, res) => {
-    const { vendedor, produto, preco, quantidade, provincia } = req.body;
+    const { vendedor, produto, preco, quantidade, provincia, contacto } = req.body;
     if (!vendedor || !produto || !preco || !provincia) {
         return res.status(400).json({ erro: 'Preencha todos os campos obrigatórios.' });
     }
     const caminhoImagem = req.file ? `/uploads/${req.file.filename}` : '';
     const novo = {
         id: baseDados.produtos.length ? baseDados.produtos[baseDados.produtos.length - 1].id + 1 : 1,
-        vendedor, produto, preco, quantidade: quantidade || '1', provincia,
+        vendedor, produto, preco, quantidade: quantidade || '1', provincia, contacto,
         imagem: caminhoImagem,
         data: new Date().toISOString()
     };

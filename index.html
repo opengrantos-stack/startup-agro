@@ -173,6 +173,7 @@
                     <input type="text" id="produtoNome" placeholder="Nome do Produto (ex: Tomate, Batata)" required>
                     <input type="text" id="produtoPreco" placeholder="Preço (ex: 2000 Kz)" required>
                     <input type="text" id="produtoQtd" placeholder="Quantidade (ex: 50 sacos)">
+                    <input type="tel" id="contactoVendedor" placeholder="Contacto do Vendedor (ex: 923456789)" required>
                     <select id="provinciaVendedor" required>
                     <option value="">Selecione a Província</option>
                     <option value="Bengo">Bengo</option>
@@ -380,6 +381,7 @@
                             <div class="item-info">
                                 <h4>${p.produto}</h4>
                                 <p><strong>Vendedor:</strong> ${p.vendedor}</p>
+                                <p><strong>📞 Contacto:</strong> ${p.contacto || "Não informado"}</p>
                                 <p class="tag-preco">Preço: ${p.preco}</p>
                                 <p><strong>Qtd:</strong> ${p.quantidade} | <strong>Província:</strong> ${p.provincia}</p>
                             </div>
@@ -399,6 +401,7 @@
             formData.append('preco', document.getElementById('produtoPreco').value);
             formData.append('quantidade', document.getElementById('produtoQtd').value);
             formData.append('provincia', document.getElementById('provinciaVendedor').value);
+            formData.append('contacto', document.getElementById('contactoVendedor').value);
             
             const cameraInput = document.getElementById('cameraInput');
             const galleryInput = document.getElementById('galleryInput');
