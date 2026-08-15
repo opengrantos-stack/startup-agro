@@ -10,6 +10,17 @@ app.use(cors());
 
 // Servir a pasta de uploads publicamente para as imagens aparecerem no site
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Evitar que o navegador mantenha versões antigas das páginas HTML
+app.use((req, res, next) => {
+    if (req.path === '/' || req.path.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+    }
+    next();
+});
+
 app.use(express.static(__dirname));
 
 const PORT = process.env.PORT || 3000;
