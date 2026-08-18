@@ -1,11 +1,25 @@
 const crypto = require('crypto');
 
-/**
- * Cria uma impressão digital dos dados de um registo.
- * Os dados originais NÃO são enviados para a blockchain.
- */
+function ordenarDados(valor) {
+    if (Array.isArray(valor)) {
+        return valor.map(ordenarDados);
+    }
+
+    if (valor && typeof valor === 'object') {
+        return Object.keys(valor)
+            .sort()
+            .reduce((resultado, chave) => {
+                resultado[chave] = ordenarDados(valor[chave]);
+                return resultado;
+            }, {});
+    }
+
+    return valor;
+}
+
 function criarHash(dados) {
-    const conteudo = JSON.stringify(dados);
+    const dadosOrdenados = ordenarDados(dados);
+    const conteudo = JSON.stringify(dadosOrdenados);
 
     return crypto
         .createHash('sha256')
@@ -13,10 +27,6 @@ function criarHash(dados) {
         .digest('hex');
 }
 
-/**
- * Cria um registo Web3 universal.
- * Não depende de Ethereum, Arbitrum ou Solana.
- */
 function criarRegistro(tipo, dados) {
     if (!tipo) {
         throw new Error('O tipo do registo é obrigatório.');
