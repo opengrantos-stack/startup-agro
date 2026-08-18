@@ -1,9 +1,8 @@
 class EVMAdapter {
-    constructor(config = {}) {
-        this.config = config;
-        this.provider = null;
-        this.chainId = null;
+    constructor(networkConfig = {}) {
+        this.config = networkConfig;
         this.address = null;
+        this.chainId = null;
     }
 
     isAvailable() {
@@ -11,32 +10,15 @@ class EVMAdapter {
                typeof window.ethereum !== 'undefined';
     }
 
-    async connect() {
-        if (!this.isAvailable()) {
-            throw new Error('Carteira EVM não encontrada.');
-        }
+    isConfigured() {
+        return Boolean(
+            this.config.name &&
+            this.config.chainId
+        );
+    }
 
-        const accounts = await window.ethereum.request({
-            method: 'eth_requestAccounts'
-        });
-
-        if (!accounts || accounts.length === 0) {
-            throw new Error('Nenhuma carteira selecionada.');
-        }
-
-        this.address = accounts[0];
-
-        const chainId = await window.ethereum.request({
-            method: 'eth_chainId'
-        });
-
-        this.chainId = chainId;
-
-        return {
-            address: this.address,
-            chainId: this.chainId,
-            type: 'evm'
-        };
+    isEnabled() {
+        return this.config.enabled === true;
     }
 
     async getChainId() {
@@ -49,14 +31,54 @@ class EVMAdapter {
         });
     }
 
+    async connect() {
+        if (!this.isConfigured()) {
+            throw new Error('Rede EVM não configurada.');
+        }
+
+        if (!this.isEnabled()) {
+            throw new Error(`A rede ${this.config.name} está desativada.`);
+        }
+
+        if (!this.isAvailable()) {
+            throw new Error('Carteira EVM não encontrada.');
+        }
+
+        const accounts = await window.ethereum.request({
+            method: 'eth_requestAccounts'
+        });
+
+        if (!accounts || accounts.length === 0) {
+            throw new Error('Nenhuma carteira selecionada.');
+        }
+
+        const chainId = await this.getChainId();
+
+        if (chainId.toLowerCase() !== this.config.chainId.toLowerCase()) {
+            throw new Error(
+                `Rede incorreta. Esperado ${this.config.name} (${this.config.chainId}), ` +
+                `mas a carteira está em ${chainId}.`
+            );
+        }
+
+        this.address = accounts[0];
+        this.chainId = chainId;
+
+        return {
+            address: this.address,
+            chainId: this.chainId,
+            network: this.config.name,
+            type: 'evm'
+        };
+    }
+
     getAddress() {
         return this.address;
     }
 
     disconnect() {
-        this.provider = null;
-        this.chainId = null;
         this.address = null;
+        this.chainId = null;
     }
 }
 
