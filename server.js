@@ -6,6 +6,9 @@ const multer = require('multer');
 const { Pool } = require('pg');
 const { createClient } = require('@supabase/supabase-js');
 
+const web3 = require('./web3');
+const { criarTabelaWeb3, guardarProva } = require('./web3/storage');
+
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -183,6 +186,7 @@ let baseDados = carregarDados();
 async function inicializarBanco() {
     try {
         await criarTabelas();
+        await criarTabelaWeb3(pool);
         await migrarDadosExistentes();
         console.log('POSTGRES: inicialização concluída.');
     } catch (error) {
@@ -278,9 +282,32 @@ app.post('/cadastrar-produto', upload.single('imagem'), async (req, res) => {
             ]
         );
 
+        const produtoGuardado = resultado.rows[0];
+
+        let provaWeb3 = null;
+
+        try {
+            const prova = web3.proofFormat.criarProvaUniversal(
+                'produto',
+                produtoGuardado,
+                {
+                    subjectId: produtoGuardado.id,
+                    subjectType: 'produto'
+                }
+            );
+
+            provaWeb3 = await guardarProva(pool, prova);
+        } catch (web3Error) {
+            console.error(
+                'WEB3 ERRO AO CRIAR PROVA:',
+                web3Error.message
+            );
+        }
+
         res.status(201).json({
             mensagem: 'Produto guardado com sucesso!',
-            produto: resultado.rows[0]
+            produto: produtoGuardado,
+            web3: provaWeb3
         });
 
     } catch (error) {
