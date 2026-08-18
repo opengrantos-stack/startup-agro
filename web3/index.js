@@ -3,6 +3,7 @@ const WalletManager = require('./wallet');
 const EVMAdapter = require('./evm');
 const SolanaAdapter = require('./solana');
 const Registry = require('./registry');
+const Verifier = require('./verifier');
 
 const wallet = new WalletManager(WEB3_CONFIG);
 
@@ -45,6 +46,7 @@ module.exports = {
     config: WEB3_CONFIG,
     wallet,
     registry: Registry,
+    verifier: Verifier,
     criarEVM,
     criarSolana,
     listarRedes
