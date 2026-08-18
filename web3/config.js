@@ -1,24 +1,35 @@
 const WEB3_CONFIG = {
     enabled: true,
 
-    networks: {
+    evm: {
         ethereum: {
-            type: 'evm',
             name: 'Ethereum',
+            chainId: '0x1',
             enabled: false
         },
 
         arbitrum: {
-            type: 'evm',
-            name: 'Arbitrum',
+            name: 'Arbitrum One',
+            chainId: '0xa4b1',
             enabled: false
         },
 
-        solana: {
-            type: 'solana',
-            name: 'Solana',
+        base: {
+            name: 'Base',
+            chainId: '0x2105',
+            enabled: false
+        },
+
+        polygon: {
+            name: 'Polygon',
+            chainId: '0x89',
             enabled: false
         }
+    },
+
+    solana: {
+        name: 'Solana',
+        enabled: false
     }
 };
 
