@@ -316,6 +316,25 @@ app.post('/cadastrar-produto', upload.single('imagem'), async (req, res) => {
     }
 });
 
+app.get('/web3/provas/:produtoId', async (req, res) => {
+    try {
+        const resultado = await pool.query(
+            `SELECT * FROM web3_records
+             WHERE subject_id = $1 AND subject_type = 'produto'
+             ORDER BY created_at DESC`,
+            [String(req.params.produtoId)]
+        );
+
+        res.json({
+            produtoId: req.params.produtoId,
+            provas: resultado.rows
+        });
+    } catch (error) {
+        console.error('ERRO AO CONSULTAR PROVA WEB3:', error.message);
+        res.status(500).json({ erro: 'Erro ao consultar prova Web3.' });
+    }
+});
+
 app.get('/precisos', async (req, res) => {
     try {
         let query = 'SELECT id, comprador, produto_desejado AS "produtoDesejado", quantidade, provincia, contacto, data FROM precisos';
