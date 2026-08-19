@@ -509,6 +509,64 @@ button.btn-blue {
     }
 }
 
+
+/* ===== PAINEL DE PUBLICAÇÃO EXPANSÍVEL ===== */
+
+.publish-toggle {
+    width: 100%;
+    margin: 0;
+    padding: 15px 16px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2e7d32, #1b5e20);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.publish-toggle:hover {
+    transform: none;
+    background: linear-gradient(135deg, #2e7d32, #1b5e20);
+}
+
+.publish-arrow {
+    font-size: 20px;
+    transition: transform .2s ease;
+}
+
+.publish-toggle.open .publish-arrow {
+    transform: rotate(180deg);
+}
+
+.publish-form-wrap {
+    display: none;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.publish-form-wrap.open {
+    display: block;
+}
+
+.publish-form-wrap input,
+.publish-form-wrap select {
+    margin-bottom: 10px;
+}
+
+.publish-form-wrap .file-label {
+    margin-bottom: 10px;
+}
+
+.publish-submit {
+    margin-top: 4px;
+}
+
 </style>
 </head>
 <body>
@@ -543,44 +601,92 @@ button.btn-blue {
 
             <!-- PAINEL DO AGRICULTOR -->
             <div id="painelAgricultor" class="card-section hidden">
-                <h2>🌾 Publicar Produto com Foto</h2>
-                <form id="formProduto" onsubmit="registarProduto(event)">
-                    <input type="text" id="produtoNome" placeholder="Nome do Produto (ex: Tomate, Batata)" required>
-                    <input type="text" id="produtoPreco" placeholder="Preço (ex: 2000 Kz)" required>
-                    <input type="text" id="produtoQtd" placeholder="Quantidade (ex: 50 sacos)">
-                    <input type="tel" id="contactoVendedor" placeholder="Contacto do Vendedor (ex: 923456789)" required>
-                    <select id="provinciaVendedor" required>
-                    <option value="">Selecione a Província</option>
-                    <option value="Bengo">Bengo</option>
-                    <option value="Benguela">Benguela</option>
-                    <option value="Bié">Bié</option>
-                    <option value="Cabinda">Cabinda</option>
-                    <option value="Cuando">Cuando</option>
-                    <option value="Cuanza Norte">Cuanza Norte</option>
-                    <option value="Cuanza Sul">Cuanza Sul</option>
-                    <option value="Cubango">Cubango</option>
-                    <option value="Cunene">Cunene</option>
-                    <option value="Huambo">Huambo</option>
-                    <option value="Huíla">Huíla</option>
-                    <option value="Icolo e Bengo">Icolo e Bengo</option>
-                    <option value="Luanda">Luanda</option>
-                    <option value="Lunda Norte">Lunda Norte</option>
-                    <option value="Lunda Sul">Lunda Sul</option>
-                    <option value="Malanje">Malanje</option>
-                    <option value="Moxico">Moxico</option>
-                    <option value="Moxico Leste">Moxico Leste</option>
-                    <option value="Namibe">Namibe</option>
-                    <option value="Uíge">Uíge</option>
-                    <option value="Zaire">Zaire</option>
-                    </select>
-                    <label for="cameraInput" class="file-label">📷 Tirar Foto</label>
-                    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
 
-                    <label for="galleryInput" class="file-label">🖼️ Escolher da Galeria</label>
-                    <input type="file" id="galleryInput" accept="image/*" style="display: none;">
+                <button type="button"
+                        id="togglePublicarProduto"
+                        class="publish-toggle"
+                        onclick="alternarPublicacaoProduto()">
 
-                    <button type="submit">Publicar Produto</button>
-                </form>
+                    <span>🌾 Publicar Produto com Foto</span>
+                    <span class="publish-arrow">⌄</span>
+
+                </button>
+
+                <div id="formPublicarProduto" class="publish-form-wrap">
+
+                    <form id="formProduto" onsubmit="registarProduto(event)">
+
+                        <input type="text"
+                               id="produtoNome"
+                               placeholder="Nome do Produto (ex: Tomate, Batata)"
+                               required>
+
+                        <input type="text"
+                               id="produtoPreco"
+                               placeholder="Preço (ex: 2000 Kz)"
+                               required>
+
+                        <input type="text"
+                               id="produtoQtd"
+                               placeholder="Quantidade (ex: 50 sacos)">
+
+                        <input type="tel"
+                               id="contactoVendedor"
+                               placeholder="Contacto do Vendedor (ex: 923456789)"
+                               required>
+
+                        <select id="provinciaVendedor" required>
+                            <option value="">Selecione a Província</option>
+                            <option value="Bengo">Bengo</option>
+                            <option value="Benguela">Benguela</option>
+                            <option value="Bié">Bié</option>
+                            <option value="Cabinda">Cabinda</option>
+                            <option value="Cuando">Cuando</option>
+                            <option value="Cuanza Norte">Cuanza Norte</option>
+                            <option value="Cuanza Sul">Cuanza Sul</option>
+                            <option value="Cubango">Cubango</option>
+                            <option value="Cunene">Cunene</option>
+                            <option value="Huambo">Huambo</option>
+                            <option value="Huíla">Huíla</option>
+                            <option value="Icolo e Bengo">Icolo e Bengo</option>
+                            <option value="Luanda">Luanda</option>
+                            <option value="Lunda Norte">Lunda Norte</option>
+                            <option value="Lunda Sul">Lunda Sul</option>
+                            <option value="Malanje">Malanje</option>
+                            <option value="Moxico">Moxico</option>
+                            <option value="Moxico Leste">Moxico Leste</option>
+                            <option value="Namibe">Namibe</option>
+                            <option value="Uíge">Uíge</option>
+                            <option value="Zaire">Zaire</option>
+                        </select>
+
+                        <label for="cameraInput" class="file-label">
+                            📷 Tirar Foto
+                        </label>
+
+                        <input type="file"
+                               id="cameraInput"
+                               accept="image/*"
+                               capture="environment"
+                               style="display:none;">
+
+                        <label for="galleryInput" class="file-label">
+                            🖼️ Escolher da Galeria
+                        </label>
+
+                        <input type="file"
+                               id="galleryInput"
+                               accept="image/*"
+                               style="display:none;">
+
+                        <button type="submit"
+                                class="publish-submit">
+                            Publicar Produto
+                        </button>
+
+                    </form>
+
+                </div>
             </div>
 
             <!-- PAINEL DO COMPRADOR -->
@@ -889,6 +995,16 @@ button.btn-blue {
             document.body.style.overflow = '';
         }
 
+        function alternarPublicacaoProduto() {
+            const formulario = document.getElementById('formPublicarProduto');
+            const botao = document.getElementById('togglePublicarProduto');
+
+            if (!formulario || !botao) return;
+
+            const aberto = formulario.classList.toggle('open');
+            botao.classList.toggle('open', aberto);
+        }
+
         async function registarProduto(e) {
             e.preventDefault();
             const formData = new FormData();
@@ -917,6 +1033,14 @@ button.btn-blue {
             if (res.ok) {
                 document.getElementById('formProduto').reset();
                 carregarProdutos();
+
+                const formulario = document.getElementById('formPublicarProduto');
+                const botao = document.getElementById('togglePublicarProduto');
+
+                if (formulario && botao) {
+                    formulario.classList.remove('open');
+                    botao.classList.remove('open');
+                }
             }
         }
 
