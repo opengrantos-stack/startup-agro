@@ -305,6 +305,210 @@ button.btn-blue {
         height: 190px;
     }
 }
+
+/* ===== MARKETPLACE COMPACTO ===== */
+
+#listaProdutos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.product-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0,0,0,.05);
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,.10);
+}
+
+.product-card:active {
+    transform: scale(.98);
+}
+
+.product-card-image {
+    width: 100%;
+    height: 145px;
+    object-fit: cover;
+    display: block;
+    background: #eef3ee;
+}
+
+.product-card-placeholder {
+    width: 100%;
+    height: 145px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef3ee;
+    font-size: 42px;
+}
+
+.product-card-name {
+    padding: 12px 13px 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.product-card-name::after {
+    content: "  ›";
+    color: var(--primary);
+    float: right;
+    font-size: 20px;
+}
+
+/* ===== JANELA DE DETALHES ===== */
+
+.product-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0,0,0,.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.product-modal.hidden {
+    display: none !important;
+}
+
+.product-modal-content {
+    width: 100%;
+    max-width: 620px;
+    max-height: 92vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -8px 30px rgba(0,0,0,.20);
+    position: relative;
+    animation: modalUp .22s ease-out;
+}
+
+@keyframes modalUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.product-modal-close {
+    position: absolute;
+    right: 14px;
+    top: 14px;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    margin: 0;
+    border-radius: 50%;
+    background: rgba(0,0,0,.55);
+    color: white;
+    font-size: 23px;
+    line-height: 38px;
+    z-index: 2;
+}
+
+.product-modal-image {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    display: block;
+    background: #eef3ee;
+}
+
+.product-modal-body {
+    padding: 20px;
+}
+
+.product-modal-title {
+    margin: 0 40px 16px 0;
+    font-size: 25px;
+    color: var(--text-main);
+}
+
+.product-detail-price {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--price);
+    margin-bottom: 16px;
+}
+
+.product-detail-list {
+    display: grid;
+    gap: 9px;
+    margin-bottom: 18px;
+}
+
+.product-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 12px;
+    background: #f6f8f6;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.product-contact-button {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+    padding: 13px;
+    border-radius: 10px;
+}
+
+.product-proof {
+    margin-top: 14px;
+    padding: 11px 12px;
+    border-radius: 10px;
+    background: #e8f5e9;
+    color: var(--primary-dark);
+    font-size: 13px;
+}
+
+@media (max-width: 800px) {
+    #listaProdutos {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .product-card-image,
+    .product-card-placeholder {
+        height: 125px;
+    }
+
+    .product-card-name {
+        padding: 10px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 380px) {
+    #listaProdutos {
+        gap: 8px;
+    }
+
+    .product-card-image,
+    .product-card-placeholder {
+        height: 115px;
+    }
+}
+
 </style>
 </head>
 <body>
@@ -528,40 +732,161 @@ button.btn-blue {
             document.getElementById('loginTipo').value = '';
         }
 
+        let produtosAtuais = [];
+
         async function carregarProdutos() {
             const produto = document.getElementById('filtroProduto').value;
             const provincia = document.getElementById('filtroProvincia').value;
             let url = `${API}/produtos?`;
+
             if (provincia) url += `provincia=${encodeURIComponent(provincia)}&`;
             if (produto) url += `produto=${encodeURIComponent(produto)}`;
 
             try {
                 const res = await fetch(url);
                 const produtos = await res.json();
+
+                produtosAtuais = produtos;
+
                 const container = document.getElementById('listaProdutos');
                 container.innerHTML = '';
+
                 if (produtos.length === 0) {
-                    container.innerHTML = '<p style="text-align: center; color: #666;">Nenhum produto encontrado.</p>';
+                    container.innerHTML =
+                        '<div class="empty-state">🌱 Nenhum produto encontrado.</div>';
                     return;
                 }
-                produtos.forEach(p => {
-                    const imgTag = p.imagem ? `<img src="${p.imagem}" class="item-img" alt="Foto">` : `<div class="item-img" style="display:flex;align-items:center;justify-content:center;background:#eee;font-size:24px;">🌾</div>`;
+
+                produtos.forEach((p, index) => {
+                    const imagem = p.imagem
+                        ? `<img src="${p.imagem}" class="product-card-image" alt="${p.produto || 'Produto agrícola'}">`
+                        : `<div class="product-card-placeholder">🌾</div>`;
+
                     container.innerHTML += `
-                        <div class="item-card">
-                            ${imgTag}
-                            <div class="item-info">
-                                <h4>${p.produto}</h4>
-                                <p><strong>Vendedor:</strong> ${p.vendedor}</p>
-                                <p><strong>📞 Contacto:</strong> ${p.contacto || "Não informado"}</p>
-                                <p class="tag-preco">Preço: ${p.preco}</p>
-                                <p><strong>Qtd:</strong> ${p.quantidade} | <strong>Província:</strong> ${p.provincia}</p>
+                        <div class="product-card"
+                             onclick="abrirDetalhesProduto(${index})"
+                             role="button"
+                             tabindex="0">
+                            ${imagem}
+                            <div class="product-card-name">
+                                ${p.produto || 'Produto agrícola'}
                             </div>
-                        </div>`;
+                        </div>
+                    `;
                 });
+
             } catch (e) {
                 document.getElementById('listaProdutos').innerHTML =
-                    '<p>Erro ao carregar produtos: ' + e.message + '</p>';
+                    '<div class="empty-state">Erro ao carregar produtos.</div>';
             }
+        }
+
+        function abrirDetalhesProduto(index) {
+            const p = produtosAtuais[index];
+            if (!p) return;
+
+            let modal = document.getElementById('productModal');
+
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'productModal';
+                modal.className = 'product-modal hidden';
+                document.body.appendChild(modal);
+            }
+
+            const imagem = p.imagem
+                ? `<img src="${p.imagem}" class="product-modal-image" alt="${p.produto || 'Produto agrícola'}">`
+                : `<div class="product-modal-image" style="display:flex;align-items:center;justify-content:center;font-size:70px;">🌾</div>`;
+
+            const contacto = p.contacto || 'Não informado';
+
+            let contactoHtml = '';
+
+            if (contacto !== 'Não informado') {
+                const numeros = contacto.replace(/[^0-9+]/g, '');
+
+                if (numeros) {
+                    contactoHtml = `
+                        <a class="product-contact-button" href="tel:${numeros}">
+                            📞 Contactar produtor
+                        </a>
+                    `;
+                }
+            }
+
+            modal.innerHTML = `
+                <div class="product-modal-content" onclick="event.stopPropagation()">
+
+                    <button class="product-modal-close"
+                            onclick="fecharDetalhesProduto()"
+                            aria-label="Fechar">×</button>
+
+                    ${imagem}
+
+                    <div class="product-modal-body">
+
+                        <h2 class="product-modal-title">
+                            ${p.produto || 'Produto agrícola'}
+                        </h2>
+
+                        <div class="product-detail-price">
+                            ${p.preco || 'Preço não informado'}
+                        </div>
+
+                        <div class="product-detail-list">
+
+                            <div class="product-detail-row">
+                                📦 <strong>Quantidade:</strong>
+                                ${p.quantidade || 'Não informada'}
+                            </div>
+
+                            <div class="product-detail-row">
+                                📍 <strong>Província:</strong>
+                                ${p.provincia || 'Não informada'}
+                            </div>
+
+                            <div class="product-detail-row">
+                                👨🏾‍🌾 <strong>Produtor:</strong>
+                                ${p.vendedor || 'Não informado'}
+                            </div>
+
+                            <div class="product-detail-row">
+                                📞 <strong>Contacto:</strong>
+                                ${contacto}
+                            </div>
+
+                        </div>
+
+                        ${contactoHtml}
+
+                        <div class="product-proof">
+                            ✓ <strong>Registo Startup-Agro</strong><br>
+                            Informações deste produto disponibilizadas pelo produtor.
+                        </div>
+
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    fecharDetalhesProduto();
+                }
+            };
+
+            document.body.style.overflow = 'hidden';
+        }
+
+        function fecharDetalhesProduto() {
+            const modal = document.getElementById('productModal');
+
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+
+            document.body.style.overflow = '';
         }
 
         async function registarProduto(e) {
