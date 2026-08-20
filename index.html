@@ -930,6 +930,51 @@ button.btn-blue {
             carregarProdutos();
         }
 
+        async function removerMeuProduto(id) {
+            const confirmar = confirm(
+                'Tens a certeza que queres eliminar este produto?\n\n' +
+                'Esta ação não pode ser desfeita.'
+            );
+
+            if (!confirmar) return;
+
+            if (!utilizadorAtual || !utilizadorAtual.ownerToken) {
+                alert('Não foi possível identificar o proprietário deste produto.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API}/produtos/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'x-owner-token': utilizadorAtual.ownerToken
+                    }
+                });
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    alert(
+                        dados.erro ||
+                        'Não foi possível eliminar o produto.'
+                    );
+                    return;
+                }
+
+                alert(
+                    dados.mensagem ||
+                    'Produto eliminado com sucesso.'
+                );
+
+                fecharDetalhesProduto();
+                carregarProdutos();
+
+            } catch (erro) {
+                console.error(erro);
+                alert('Erro de ligação ao servidor.');
+            }
+        }
+
         async function removerProdutoComoAdministrador(id) {
             const confirmar = confirm(
                 'ATENÇÃO: vais eliminar este cadastro da plataforma.\n\n' +
@@ -1096,6 +1141,21 @@ button.btn-blue {
                         <div style="margin: 10px 0 16px; padding: 10px; background: #f5f5f5; border-radius: 8px;">
                             🕒 <strong>Publicado em:</strong> ${formatarDataPublicacao(p.data)}
                         </div>
+
+                        ${
+                            utilizadorAtual &&
+                            utilizadorAtual.ownerToken &&
+                            p.owner_token === utilizadorAtual.ownerToken
+                            ? `
+                                <button
+                                    type="button"
+                                    onclick="removerMeuProduto(${p.id})"
+                                    style="width:100%; margin:0 0 16px; padding:13px; border:1px solid #c62828; border-radius:10px; background:#fff; color:#c62828; font-weight:700; cursor:pointer;">
+                                    🗑️ Eliminar meu produto
+                                </button>
+                              `
+                            : ''
+                        }
 
                         ${
                             startupAgroAdminToken

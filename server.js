@@ -207,7 +207,7 @@ app.get('/produtos', async (req, res) => {
     try {
         let query = `
             SELECT id, vendedor, produto, preco, quantidade,
-                   provincia, contacto, imagem, data
+                   provincia, contacto, imagem, data, owner_token
             FROM produtos`;
         const valores = [];
         const filtros = [];
