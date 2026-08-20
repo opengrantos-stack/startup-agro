@@ -63,6 +63,36 @@ pool.on('error', (error) => {
 
 let produtosCache = null;
 
+
+// ==============================
+// AUTENTICAÇÃO DO ADMINISTRADOR
+// ==============================
+// O administrador é uma conta específica.
+// O telefone autorizado fica no ambiente do servidor.
+// Nunca é enviado pelo utilizador no frontend.
+
+async function verificarAdministradorPorToken(ownerToken) {
+    if (!ownerToken) return false;
+
+    const telefoneAdmin =
+        String(process.env.STARTUP_AGRO_ADMIN_PHONE || '').trim();
+
+    if (!telefoneAdmin) return false;
+
+    const resultado = await pool.query(
+        `SELECT telefone
+         FROM utilizadores
+         WHERE owner_token = $1`,
+        [ownerToken]
+    );
+
+    if (resultado.rowCount === 0) {
+        return false;
+    }
+
+    return String(resultado.rows[0].telefone).trim() === telefoneAdmin;
+}
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -373,6 +403,16 @@ app.post('/login', async (req, res) => {
 
         delete utilizador.pin_hash;
 
+        // Reconhecer automaticamente o administrador.
+        // Apenas a conta cujo telefone está definido no
+        // STARTUP_AGRO_ADMIN_PHONE recebe privilégios administrativos.
+        const telefoneAdmin =
+            String(process.env.STARTUP_AGRO_ADMIN_PHONE || '').trim();
+
+        utilizador.ehAdministrador =
+            telefoneAdmin &&
+            String(utilizador.telefone).trim() === telefoneAdmin;
+
         res.json({
             mensagem: 'Login efetuado com sucesso!',
             utilizador
@@ -548,9 +588,8 @@ app.put('/produtos/:id', upload.single('imagem'), async (req, res) => {
         } = req.body;
 
         const ownerTokenHeader = req.headers['x-owner-token'];
-        const adminToken = req.headers['x-admin-token'];
-        const adminTokenConfigurado =
-            process.env.STARTUP_AGRO_ADMIN_TOKEN;
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerTokenHeader);
 
         if (!vendedor || !produto || !preco || !provincia || !contacto) {
             return res.status(400).json({
@@ -573,10 +612,8 @@ app.put('/produtos/:id', upload.single('imagem'), async (req, res) => {
 
         imagemAtual = existente.rows[0].imagem || '';
 
-        // Administrador pode editar qualquer produto.
-        const ehAdministrador =
-            adminTokenConfigurado &&
-            adminToken === adminTokenConfigurado;
+        // Administrador autenticado pela própria conta.
+
 
         // Proprietário precisa comprovar a posse pelo token.
         if (!ehAdministrador) {
@@ -680,15 +717,12 @@ app.delete('/produtos/:id', async (req, res) => {
         const { id } = req.params;
 
         const ownerToken = req.headers['x-owner-token'];
-        const adminToken = req.headers['x-admin-token'];
 
-        const adminTokenConfigurado = process.env.STARTUP_AGRO_ADMIN_TOKEN;
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerToken);
 
-        // O proprietário da plataforma pode remover qualquer produto.
-        if (
-            adminTokenConfigurado &&
-            adminToken === adminTokenConfigurado
-        ) {
+        // O administrador autenticado pode remover qualquer produto.
+        if (ehAdministrador) {
             const resultadoAdmin = await pool.query(
                 `DELETE FROM produtos
                  WHERE id = $1
@@ -799,16 +833,12 @@ app.delete('/precisos/:id', async (req, res) => {
         const { id } = req.params;
 
         const ownerToken = req.headers['x-owner-token'];
-        const adminToken = req.headers['x-admin-token'];
 
-        const adminTokenConfigurado =
-            process.env.STARTUP_AGRO_ADMIN_TOKEN;
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerToken);
 
-        // Administrador pode remover qualquer necessidade.
-        if (
-            adminTokenConfigurado &&
-            adminToken === adminTokenConfigurado
-        ) {
+        // Administrador autenticado pode remover qualquer necessidade.
+        if (ehAdministrador) {
             const resultadoAdmin = await pool.query(
                 `DELETE FROM precisos
                  WHERE id = $1
@@ -876,10 +906,9 @@ app.put('/precisos/:id', async (req, res) => {
         } = req.body;
 
         const ownerToken = req.headers['x-owner-token'];
-        const adminToken = req.headers['x-admin-token'];
 
-        const adminTokenConfigurado =
-            process.env.STARTUP_AGRO_ADMIN_TOKEN;
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerToken);
 
         if (!comprador || !produtoDesejado || !provincia || !contacto) {
             return res.status(400).json({
@@ -887,11 +916,8 @@ app.put('/precisos/:id', async (req, res) => {
             });
         }
 
-        // Administrador pode editar qualquer necessidade.
-        if (
-            adminTokenConfigurado &&
-            adminToken === adminTokenConfigurado
-        ) {
+        // Administrador autenticado pode editar qualquer necessidade.
+        if (ehAdministrador) {
             const resultadoAdmin = await pool.query(
                 `UPDATE precisos
                  SET comprador = $1,

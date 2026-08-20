@@ -685,12 +685,6 @@ button.btn-blue {
             <div id="painelAgricultor" class="card-section hidden">
 
                 <button type="button"
-                        onclick="entrarModoAdministrador()"
-                        style="width:100%; margin:10px 0; padding:12px; border:1px solid #999; border-radius:10px; background:#fff; font-weight:700; cursor:pointer;">
-                    🔐 Modo administrador
-                </button>
-
-                <button type="button"
                         id="togglePublicarProduto"
                         class="publish-toggle"
                         onclick="alternarPublicacaoProduto()">
@@ -1221,40 +1215,6 @@ button.btn-blue {
         // MODO ADMINISTRADOR
         // ==============================
 
-        let startupAgroAdminToken =
-            sessionStorage.getItem('startupAgroAdminToken') || '';
-
-        function entrarModoAdministrador() {
-            const token = prompt(
-                'Introduz o token de administrador da Startup-Agro:'
-            );
-
-            if (!token) return;
-
-            startupAgroAdminToken = token.trim();
-
-            sessionStorage.setItem(
-                'startupAgroAdminToken',
-                startupAgroAdminToken
-            );
-
-            alert('Modo administrador ativado.');
-
-            carregarProdutos();
-        }
-
-        function sairModoAdministrador() {
-            startupAgroAdminToken = '';
-
-            sessionStorage.removeItem(
-                'startupAgroAdminToken'
-            );
-
-            alert('Modo administrador desativado.');
-
-            carregarProdutos();
-        }
-
         async function removerMeuProduto(id) {
             const confirmar = confirm(
                 'Tens a certeza que queres eliminar este produto?\n\n' +
@@ -1313,7 +1273,7 @@ button.btn-blue {
                 const res = await fetch(`${API}/produtos/${id}`, {
                     method: 'DELETE',
                     headers: {
-                        'x-admin-token': startupAgroAdminToken
+                        'x-owner-token': utilizadorAtual.ownerToken
                     }
                 });
 
@@ -1324,10 +1284,6 @@ button.btn-blue {
                         dados.erro ||
                         'Não foi possível eliminar o cadastro.'
                     );
-
-                    if (res.status === 401 || res.status === 403) {
-                        sairModoAdministrador();
-                    }
 
                     return;
                 }
@@ -1490,7 +1446,7 @@ button.btn-blue {
                         }
 
                         ${
-                            startupAgroAdminToken
+                            utilizadorAtual.ehAdministrador
                             ? `
                                 <button
                                     type="button"
@@ -2022,7 +1978,7 @@ button.btn-blue {
                         }
 
                         ${
-                            startupAgroAdminToken
+                            utilizadorAtual.ehAdministrador
                             ? `
                                 <button
                                     type="button"
@@ -2203,16 +2159,11 @@ button.btn-blue {
 
             if (!confirmar) return;
 
-            if (!startupAgroAdminToken) {
-                alert('Modo administrador não está ativo.');
-                return;
-            }
-
             try {
                 const res = await fetch(`${API}/precisos/${id}`, {
                     method: 'DELETE',
                     headers: {
-                        'x-admin-token': startupAgroAdminToken
+                        'x-owner-token': utilizadorAtual.ownerToken
                     }
                 });
 
