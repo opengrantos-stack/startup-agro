@@ -577,19 +577,101 @@ button.btn-blue {
             <p>Conectando Agricultores e Compradores em Angola</p>
         </header>
 
-        <!-- ECRÃ DE LOGIN -->
+        <!-- ECRÃ DE LOGIN / CADASTRO -->
         <div id="seccaoLogin" class="card-section">
             <h2>🔐 Entrar na Plataforma</h2>
-            <p style="font-size: 14px; color: #666;">Selecione o seu perfil para começar:</p>
-            <form onsubmit="fazerLogin(event)">
-                <input type="text" id="loginNome" placeholder="Seu Nome ou Fazenda" required>
-                <select id="loginTipo" required>
-                    <option value="">Selecione o Perfil</option>
-                    <option value="agricultor">🌾 Sou Agricultor (Vendedor)</option>
-                    <option value="comprador">🛒 Sou Comprador (Cliente)</option>
-                </select>
-                <button type="submit">Entrar no Sistema</button>
-            </form>
+
+            <div style="display:flex; gap:8px; margin-bottom:15px;">
+                <button type="button"
+                        id="btnModoEntrar"
+                        onclick="mostrarModoAutenticacao('entrar')"
+                        style="flex:1;">
+                    Entrar
+                </button>
+
+                <button type="button"
+                        id="btnModoCadastro"
+                        onclick="mostrarModoAutenticacao('cadastro')"
+                        style="flex:1; background:#fff; color:#333; border:1px solid #ccc;">
+                    Criar conta
+                </button>
+            </div>
+
+            <!-- LOGIN -->
+            <div id="formularioEntrar">
+                <p style="font-size:14px; color:#666;">
+                    Entre com o seu telefone e PIN.
+                </p>
+
+                <form onsubmit="fazerLogin(event)">
+                    <input
+                        type="tel"
+                        id="loginTelefone"
+                        placeholder="Número de telefone"
+                        inputmode="numeric"
+                        required
+                    >
+
+                    <input
+                        type="password"
+                        id="loginPin"
+                        placeholder="PIN (4 a 6 dígitos)"
+                        inputmode="numeric"
+                        maxlength="6"
+                        required
+                    >
+
+                    <button type="submit">
+                        Entrar no Sistema
+                    </button>
+                </form>
+            </div>
+
+            <!-- CADASTRO -->
+            <div id="formularioCadastro" class="hidden">
+                <p style="font-size:14px; color:#666;">
+                    Crie a sua conta para publicar produtos ou necessidades.
+                </p>
+
+                <form onsubmit="criarConta(event)">
+                    <input
+                        type="text"
+                        id="cadastroNome"
+                        placeholder="Seu Nome ou Fazenda"
+                        required
+                    >
+
+                    <input
+                        type="tel"
+                        id="cadastroTelefone"
+                        placeholder="Número de telefone"
+                        inputmode="numeric"
+                        required
+                    >
+
+                    <select id="cadastroTipo" required>
+                        <option value="">Selecione o Perfil</option>
+                        <option value="agricultor">🌾 Sou Agricultor (Vendedor)</option>
+                        <option value="comprador">🛒 Sou Comprador (Cliente)</option>
+                    </select>
+
+                    <input
+                        type="password"
+                        id="cadastroPin"
+                        placeholder="Crie um PIN de 4 a 6 dígitos"
+                        inputmode="numeric"
+                        maxlength="6"
+                        required
+                    >
+
+                    <button type="submit">
+                        Criar Conta
+                    </button>
+                </form>
+            </div>
+
+            <p id="mensagemAutenticacao"
+               style="font-size:14px; margin-top:12px;"></p>
         </div>
 
         <!-- APLICAÇÃO PRINCIPAL -->
@@ -707,37 +789,89 @@ button.btn-blue {
 
             <!-- PAINEL DO COMPRADOR -->
             <div id="painelComprador" class="card-section blue hidden">
-                <h2>📢 Publicar Necessidade de Compra</h2>
-                <form id="formPreciso" onsubmit="registarNecessidade(event)">
-                    <input type="text" id="produtoDesejado" placeholder="Produto que procura (ex: Milho)" required>
-                    <input type="text" id="qtdDesejada" placeholder="Quantidade desejada (ex: 20 sacos)">
-                    <select id="provinciaComprador" required>
-                    <option value="">Selecione a Província</option>
-                    <option value="Bengo">Bengo</option>
-                    <option value="Benguela">Benguela</option>
-                    <option value="Bié">Bié</option>
-                    <option value="Cabinda">Cabinda</option>
-                    <option value="Cuando">Cuando</option>
-                    <option value="Cuanza Norte">Cuanza Norte</option>
-                    <option value="Cuanza Sul">Cuanza Sul</option>
-                    <option value="Cubango">Cubango</option>
-                    <option value="Cunene">Cunene</option>
-                    <option value="Huambo">Huambo</option>
-                    <option value="Huíla">Huíla</option>
-                    <option value="Icolo e Bengo">Icolo e Bengo</option>
-                    <option value="Luanda">Luanda</option>
-                    <option value="Lunda Norte">Lunda Norte</option>
-                    <option value="Lunda Sul">Lunda Sul</option>
-                    <option value="Malanje">Malanje</option>
-                    <option value="Moxico">Moxico</option>
-                    <option value="Moxico Leste">Moxico Leste</option>
-                    <option value="Namibe">Namibe</option>
-                    <option value="Uíge">Uíge</option>
-                    <option value="Zaire">Zaire</option>
-                    </select>
-                    <input type="text" id="contactoComprador" placeholder="Seu Telefone / WhatsApp" required>
-                    <button type="submit" class="btn-blue">Publicar Necessidade</button>
-                </form>
+
+                <button
+                    type="button"
+                    id="togglePublicarNecessidade"
+                    class="publish-toggle"
+                    onclick="alternarPublicacaoNecessidade()">
+
+                    <span id="tituloBotaoNecessidade">📢 Publicar Necessidade de Compra</span>
+                    <span class="publish-arrow">⌄</span>
+
+                </button>
+
+                <div
+                    id="formPublicarNecessidade"
+                    class="publish-form-wrap">
+
+                    <form id="formPreciso" onsubmit="registarNecessidade(event)">
+
+                        <input
+                            type="hidden"
+                            id="necessidadeEditandoId"
+                            value="">
+
+                        <input
+                            type="text"
+                            id="produtoDesejado"
+                            placeholder="Produto que procura (ex: Milho)"
+                            required>
+
+                        <input
+                            type="text"
+                            id="qtdDesejada"
+                            placeholder="Quantidade desejada (ex: 20 sacos)">
+
+                        <select id="provinciaComprador" required>
+                            <option value="">Selecione a Província</option>
+                            <option value="Bengo">Bengo</option>
+                            <option value="Benguela">Benguela</option>
+                            <option value="Bié">Bié</option>
+                            <option value="Cabinda">Cabinda</option>
+                            <option value="Cuando">Cuando</option>
+                            <option value="Cuanza Norte">Cuanza Norte</option>
+                            <option value="Cuanza Sul">Cuanza Sul</option>
+                            <option value="Cubango">Cubango</option>
+                            <option value="Cunene">Cunene</option>
+                            <option value="Huambo">Huambo</option>
+                            <option value="Huíla">Huíla</option>
+                            <option value="Icolo e Bengo">Icolo e Bengo</option>
+                            <option value="Luanda">Luanda</option>
+                            <option value="Lunda Norte">Lunda Norte</option>
+                            <option value="Lunda Sul">Lunda Sul</option>
+                            <option value="Malanje">Malanje</option>
+                            <option value="Moxico">Moxico</option>
+                            <option value="Moxico Leste">Moxico Leste</option>
+                            <option value="Namibe">Namibe</option>
+                            <option value="Uíge">Uíge</option>
+                            <option value="Zaire">Zaire</option>
+                        </select>
+
+                        <input
+                            type="text"
+                            id="contactoComprador"
+                            placeholder="Seu Telefone / WhatsApp"
+                            required>
+
+                        <button
+                            type="submit"
+                            class="btn-blue"
+                            id="btnGuardarNecessidade">
+                            Publicar Necessidade
+                        </button>
+
+                        <button
+                            type="button"
+                            id="btnCancelarEdicaoNecessidade"
+                            onclick="cancelarEdicaoNecessidade()"
+                            style="display:none; width:100%; margin-top:10px; padding:13px; border:1px solid #777; border-radius:10px; background:#fff; color:#555; font-weight:700; cursor:pointer;">
+                            Cancelar edição
+                        </button>
+
+                    </form>
+
+                </div>
             </div>
 
             <!-- MERCADO -->
@@ -812,92 +946,273 @@ button.btn-blue {
         const API = '';
         let utilizadorAtual = null;
 
-        function gerarOwnerToken() {
-            if (window.crypto && crypto.randomUUID) {
-                return crypto.randomUUID();
-            }
+        function mostrarMensagemAutenticacao(mensagem, erro = false) {
+            const elemento = document.getElementById('mensagemAutenticacao');
 
-            return 'owner-' +
-                Date.now().toString(36) +
-                '-' +
-                Math.random().toString(36).slice(2) +
-                '-' +
-                Math.random().toString(36).slice(2);
+            if (!elemento) return;
+
+            elemento.textContent = mensagem;
+            elemento.style.color = erro ? '#d32f2f' : '#2e7d32';
         }
 
-        function fazerLogin(e) {
+        function mostrarModoAutenticacao(modo) {
+            const entrar = document.getElementById('formularioEntrar');
+            const cadastro = document.getElementById('formularioCadastro');
+            const btnEntrar = document.getElementById('btnModoEntrar');
+            const btnCadastro = document.getElementById('btnModoCadastro');
+
+            mostrarMensagemAutenticacao('');
+
+            if (modo === 'cadastro') {
+                entrar.classList.add('hidden');
+                cadastro.classList.remove('hidden');
+
+                btnCadastro.style.background = '';
+                btnCadastro.style.color = '';
+                btnCadastro.style.border = '';
+
+                btnEntrar.style.background = '#fff';
+                btnEntrar.style.color = '#333';
+                btnEntrar.style.border = '1px solid #ccc';
+            } else {
+                cadastro.classList.add('hidden');
+                entrar.classList.remove('hidden');
+
+                btnEntrar.style.background = '';
+                btnEntrar.style.color = '';
+                btnEntrar.style.border = '';
+
+                btnCadastro.style.background = '#fff';
+                btnCadastro.style.color = '#333';
+                btnCadastro.style.border = '1px solid #ccc';
+            }
+        }
+
+        async function fazerLogin(e) {
             e.preventDefault();
 
-            const nome = document.getElementById('loginNome').value.trim();
-            const tipo = document.getElementById('loginTipo').value;
+            const telefone =
+                document.getElementById('loginTelefone').value.trim();
 
-            if (!nome || !tipo) return;
+            const pin =
+                document.getElementById('loginPin').value.trim();
 
-            const utilizadorAnterior =
-                JSON.parse(localStorage.getItem('agro_user') || 'null');
+            if (!telefone || !pin) {
+                mostrarMensagemAutenticacao(
+                    'Informe o telefone e o PIN.',
+                    true
+                );
+                return;
+            }
 
-            const ownerToken =
-                utilizadorAnterior &&
-                utilizadorAnterior.ownerToken
-                    ? utilizadorAnterior.ownerToken
-                    : gerarOwnerToken();
+            try {
+                mostrarMensagemAutenticacao('A entrar...');
 
-            utilizadorAtual = {
-                nome,
-                tipo,
-                ownerToken
-            };
+                const resposta = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        telefone,
+                        pin
+                    })
+                });
 
-            localStorage.setItem(
-                'agro_user',
-                JSON.stringify(utilizadorAtual)
-            );
+                const dados = await resposta.json();
 
-            aplicarSessao();
+                if (!resposta.ok) {
+                    throw new Error(
+                        dados.erro || 'Não foi possível entrar.'
+                    );
+                }
+
+                utilizadorAtual = {
+                    ...dados.utilizador,
+                    ownerToken: dados.utilizador.owner_token
+                };
+
+                localStorage.setItem(
+                    'agro_user',
+                    JSON.stringify(utilizadorAtual)
+                );
+
+                mostrarMensagemAutenticacao(
+                    'Login efetuado com sucesso!'
+                );
+
+                aplicarSessao();
+
+            } catch (erro) {
+                console.error('ERRO NO LOGIN:', erro);
+
+                mostrarMensagemAutenticacao(
+                    erro.message || 'Erro ao efetuar login.',
+                    true
+                );
+            }
+        }
+
+        async function criarConta(e) {
+            e.preventDefault();
+
+            const nome =
+                document.getElementById('cadastroNome').value.trim();
+
+            const telefone =
+                document.getElementById('cadastroTelefone').value.trim();
+
+            const tipo =
+                document.getElementById('cadastroTipo').value;
+
+            const pin =
+                document.getElementById('cadastroPin').value.trim();
+
+            if (!nome || !telefone || !tipo || !pin) {
+                mostrarMensagemAutenticacao(
+                    'Preencha todos os campos.',
+                    true
+                );
+                return;
+            }
+
+            if (!/^\d{4,6}$/.test(pin)) {
+                mostrarMensagemAutenticacao(
+                    'O PIN deve ter entre 4 e 6 dígitos.',
+                    true
+                );
+                return;
+            }
+
+            try {
+                mostrarMensagemAutenticacao(
+                    'A criar a sua conta...'
+                );
+
+                const resposta = await fetch('/utilizadores', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nome,
+                        telefone,
+                        tipo,
+                        pin
+                    })
+                });
+
+                const dados = await resposta.json();
+
+                if (!resposta.ok) {
+                    throw new Error(
+                        dados.erro || 'Não foi possível criar a conta.'
+                    );
+                }
+
+                utilizadorAtual = {
+                    ...dados.utilizador,
+                    ownerToken: dados.utilizador.owner_token
+                };
+
+                localStorage.setItem(
+                    'agro_user',
+                    JSON.stringify(utilizadorAtual)
+                );
+
+                mostrarMensagemAutenticacao(
+                    'Conta criada com sucesso!'
+                );
+
+                aplicarSessao();
+
+            } catch (erro) {
+                console.error(
+                    'ERRO AO CRIAR CONTA:',
+                    erro
+                );
+
+                mostrarMensagemAutenticacao(
+                    erro.message || 'Erro ao criar a conta.',
+                    true
+                );
+            }
         }
 
         function aplicarSessao() {
             const salvo = localStorage.getItem('agro_user');
-            if (salvo) {
+
+            if (!salvo) return;
+
+            try {
                 utilizadorAtual = JSON.parse(salvo);
+            } catch (erro) {
+                console.error(
+                    'ERRO AO LER SESSÃO:',
+                    erro
+                );
 
-                // Compatibilidade com sessões antigas:
-                // se o utilizador ainda não tiver ownerToken,
-                // o sistema cria um automaticamente.
-                if (!utilizadorAtual.ownerToken) {
-                    utilizadorAtual.ownerToken = gerarOwnerToken();
-
-                    localStorage.setItem(
-                        'agro_user',
-                        JSON.stringify(utilizadorAtual)
-                    );
-                }
-
-                document.getElementById('seccaoLogin').classList.add('hidden');
-                document.getElementById('seccaoApp').classList.remove('hidden');
-
-                document.getElementById('spanUtilizador').textContent = utilizadorAtual.nome;
-                document.getElementById('spanTipoPerfil').textContent = utilizadorAtual.tipo === 'agricultor' ? 'Agricultor' : 'Comprador';
-
-                if (utilizadorAtual.tipo === 'agricultor') {
-                    document.getElementById('painelAgricultor').classList.remove('hidden');
-                    document.getElementById('painelComprador').classList.add('hidden');
-                } else {
-                    document.getElementById('painelComprador').classList.remove('hidden');
-                    document.getElementById('painelAgricultor').classList.add('hidden');
-                }
-                carregarProdutos();
-                carregarPrecisos();
+                localStorage.removeItem('agro_user');
+                utilizadorAtual = null;
+                return;
             }
+
+            if (!utilizadorAtual || !utilizadorAtual.ownerToken) {
+                localStorage.removeItem('agro_user');
+                utilizadorAtual = null;
+                return;
+            }
+
+            document.getElementById('seccaoLogin').classList.add('hidden');
+            document.getElementById('seccaoApp').classList.remove('hidden');
+
+            document.getElementById('spanUtilizador').textContent =
+                utilizadorAtual.nome;
+
+            document.getElementById('spanTipoPerfil').textContent =
+                utilizadorAtual.tipo === 'agricultor'
+                    ? 'Agricultor'
+                    : 'Comprador';
+
+            if (utilizadorAtual.tipo === 'agricultor') {
+                document.getElementById('painelAgricultor')
+                    .classList.remove('hidden');
+
+                document.getElementById('painelComprador')
+                    .classList.add('hidden');
+            } else {
+                document.getElementById('painelComprador')
+                    .classList.remove('hidden');
+
+                document.getElementById('painelAgricultor')
+                    .classList.add('hidden');
+            }
+
+            carregarProdutos();
+            carregarPrecisos();
         }
 
         function terminarSessao() {
             localStorage.removeItem('agro_user');
+
             utilizadorAtual = null;
-            document.getElementById('seccaoApp').classList.add('hidden');
-            document.getElementById('seccaoLogin').classList.remove('hidden');
-            document.getElementById('loginNome').value = '';
-            document.getElementById('loginTipo').value = '';
+
+            document.getElementById('seccaoApp')
+                .classList.add('hidden');
+
+            document.getElementById('seccaoLogin')
+                .classList.remove('hidden');
+
+            document.getElementById('loginTelefone').value = '';
+            document.getElementById('loginPin').value = '';
+            document.getElementById('cadastroNome').value = '';
+            document.getElementById('cadastroTelefone').value = '';
+            document.getElementById('cadastroTipo').value = '';
+            document.getElementById('cadastroPin').value = '';
+
+            mostrarMensagemAutenticacao('');
+
+            mostrarModoAutenticacao('entrar');
         }
 
         let produtosAtuais = [];
@@ -1691,8 +2006,15 @@ button.btn-blue {
                             ? `
                                 <button
                                     type="button"
+                                    onclick="editarMinhaNecessidade(${p.id})"
+                                    style="width:100%; margin-top:12px; padding:13px; border:1px solid #1976d2; border-radius:10px; background:#fff; color:#1976d2; font-weight:700; cursor:pointer;">
+                                    ✏️ Editar minha necessidade
+                                </button>
+
+                                <button
+                                    type="button"
                                     onclick="removerMinhaNecessidade(${p.id})"
-                                    style="width:100%; margin-top:12px; padding:13px; border:1px solid #c62828; border-radius:10px; background:#fff; color:#c62828; font-weight:700; cursor:pointer;">
+                                    style="width:100%; margin-top:10px; padding:13px; border:1px solid #c62828; border-radius:10px; background:#fff; color:#c62828; font-weight:700; cursor:pointer;">
                                     🗑️ Eliminar minha necessidade
                                 </button>
                               `
@@ -1740,6 +2062,85 @@ button.btn-blue {
             }
 
             document.body.style.overflow = '';
+        }
+
+        function editarMinhaNecessidade(id) {
+            const p = window.precisosAtuais?.find(item =>
+                Number(item.id) === Number(id)
+            );
+
+            if (!p) {
+                alert('Não foi possível encontrar esta necessidade.');
+                return;
+            }
+
+            if (
+                !utilizadorAtual ||
+                !utilizadorAtual.ownerToken ||
+                p.owner_token !== utilizadorAtual.ownerToken
+            ) {
+                alert('Não tens autorização para editar esta necessidade.');
+                return;
+            }
+
+            // Fechar o modal de detalhes.
+            fecharDetalhesNecessidade();
+
+            // Identificar a necessidade que está sendo editada.
+            document.getElementById('necessidadeEditandoId').value = p.id;
+
+            // Preencher os campos atuais.
+            document.getElementById('produtoDesejado').value =
+                p.produtoDesejado || '';
+
+            document.getElementById('qtdDesejada').value =
+                p.quantidade || '';
+
+            document.getElementById('provinciaComprador').value =
+                p.provincia || '';
+
+            document.getElementById('contactoComprador').value =
+                p.contacto || '';
+
+            // Alterar o estado do formulário para edição.
+            document.getElementById('tituloBotaoNecessidade').textContent =
+                '✏️ Editar Necessidade de Compra';
+
+            document.getElementById('btnGuardarNecessidade').textContent =
+                'Guardar Alterações';
+
+            document.getElementById('btnCancelarEdicaoNecessidade').style.display =
+                'block';
+
+            // Abrir automaticamente o painel de preenchimento.
+            const formulario =
+                document.getElementById('formPublicarNecessidade');
+
+            if (formulario) {
+                formulario.classList.add('open');
+            }
+
+            // Levar o utilizador até ao formulário.
+            document.getElementById('togglePublicarNecessidade')
+                .scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+        }
+
+        function cancelarEdicaoNecessidade() {
+            document.getElementById('necessidadeEditandoId').value = '';
+
+            document.getElementById('formPreciso').reset();
+
+            document.getElementById('tituloBotaoNecessidade').textContent =
+                '📢 Publicar Necessidade de Compra';
+
+            document.getElementById('btnGuardarNecessidade').textContent =
+                'Publicar Necessidade';
+
+            document.getElementById('btnCancelarEdicaoNecessidade').style.display =
+                'none';
         }
 
         async function removerMinhaNecessidade(id) {
@@ -1844,33 +2245,109 @@ button.btn-blue {
             }
         }
 
+        function alternarPublicacaoNecessidade() {
+            const formulario =
+                document.getElementById('formPublicarNecessidade');
+
+            if (!formulario) return;
+
+            formulario.classList.toggle('open');
+        }
+
         async function registarNecessidade(e) {
             e.preventDefault();
+
+            if (!utilizadorAtual) {
+                alert('É necessário estar autenticado.');
+                return;
+            }
+
+            const idEditando =
+                document.getElementById('necessidadeEditandoId').value;
+
             const dados = {
                 comprador: utilizadorAtual.nome,
-                produtoDesejado: document.getElementById('produtoDesejado').value,
-                quantidade: document.getElementById('qtdDesejada').value,
-                provincia: document.getElementById('provinciaComprador').value,
-                contacto: document.getElementById('contactoComprador').value,
-
-                // Identificação técnica automática do proprietário.
-                // O comprador nunca precisa ver ou inserir este token.
-                ownerToken: utilizadorAtual.ownerToken
+                produtoDesejado:
+                    document.getElementById('produtoDesejado').value,
+                quantidade:
+                    document.getElementById('qtdDesejada').value,
+                provincia:
+                    document.getElementById('provinciaComprador').value,
+                contacto:
+                    document.getElementById('contactoComprador').value
             };
 
-            const res = await fetch(`${API}/precisos`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
+            let url = `${API}/precisos`;
+            let metodo = 'POST';
 
-            const resultado = await res.json();
-            alert(resultado.mensagem || resultado.erro);
-            if (res.ok) {
+            // Se existe um ID, estamos a editar.
+            if (idEditando) {
+                url = `${API}/precisos/${idEditando}`;
+                metodo = 'PUT';
+            } else {
+                // Na publicação, enviar o token do proprietário.
+                dados.ownerToken = utilizadorAtual.ownerToken;
+            }
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+
+                // Para edição, o servidor usa este token para
+                // confirmar que a necessidade pertence ao comprador.
+                if (utilizadorAtual.ownerToken) {
+                    headers['x-owner-token'] =
+                        utilizadorAtual.ownerToken;
+                }
+
+                const res = await fetch(url, {
+                    method: metodo,
+                    headers,
+                    body: JSON.stringify(dados)
+                });
+
+                const resultado = await res.json();
+
+                alert(resultado.mensagem || resultado.erro);
+
+                if (!res.ok) return;
+
+                // Limpar o estado de edição.
+                document.getElementById(
+                    'necessidadeEditandoId'
+                ).value = '';
+
                 document.getElementById('formPreciso').reset();
+
+                document.getElementById(
+                    'tituloBotaoNecessidade'
+                ).textContent =
+                    '📢 Publicar Necessidade de Compra';
+
+                document.getElementById(
+                    'btnGuardarNecessidade'
+                ).textContent =
+                    'Publicar Necessidade';
+
+                document.getElementById(
+                    'btnCancelarEdicaoNecessidade'
+                ).style.display = 'none';
+
                 carregarPrecisos();
+
+            } catch (error) {
+                console.error(
+                    'ERRO AO PUBLICAR/EDITAR NECESSIDADE:',
+                    error
+                );
+
+                alert(
+                    'Não foi possível comunicar com o servidor.'
+                );
             }
         }
+
 
         window.onload = () => {
             aplicarSessao();

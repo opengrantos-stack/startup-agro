@@ -1,3 +1,4 @@
+require('dotenv').config();
 const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
@@ -6,6 +7,33 @@ const path = require('path');
 const multer = require('multer');
 const { Pool } = require('pg');
 const { createClient } = require('@supabase/supabase-js');
+
+function gerarPinHash(pin) {
+    const salt = crypto.randomBytes(16).toString('hex');
+
+    const hash = crypto
+        .scryptSync(String(pin), salt, 64)
+        .toString('hex');
+
+    return `${salt}:${hash}`;
+}
+
+function verificarPin(pin, pinHash) {
+    const [salt, hashGuardado] = String(pinHash).split(':');
+
+    if (!salt || !hashGuardado) {
+        return false;
+    }
+
+    const hashCalculado = crypto
+        .scryptSync(String(pin), salt, 64)
+        .toString('hex');
+
+    return crypto.timingSafeEqual(
+        Buffer.from(hashGuardado, 'hex'),
+        Buffer.from(hashCalculado, 'hex')
+    );
+}
 
 const web3 = require('./web3');
 const { criarTabelaWeb3, guardarProva } = require('./web3/storage');
@@ -17,14 +45,23 @@ const supabase = createClient(
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+    max: 5,
+    min: 0,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    statement_timeout: 10000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000
 });
 
-pool.query('SELECT NOW()')
-    .then(result => console.log('POSTGRES OK:', result.rows[0].now))
-    .catch(error => console.error('POSTGRES ERRO:', error.message));
 
 
+pool.on('error', (error) => {
+    console.error('POSTGRES: erro em conexão ociosa:', error.code || '', error.message);
+});
+
+let produtosCache = null;
 
 const app = express();
 app.use(express.json());
@@ -114,6 +151,16 @@ async function criarTabelas() {
 
         ALTER TABLE precisos
         ADD COLUMN IF NOT EXISTS owner_token TEXT;
+
+        CREATE TABLE IF NOT EXISTS utilizadores (
+            id SERIAL PRIMARY KEY,
+            nome TEXT NOT NULL,
+            telefone TEXT NOT NULL UNIQUE,
+            tipo TEXT NOT NULL,
+            pin_hash TEXT NOT NULL,
+            owner_token TEXT NOT NULL UNIQUE,
+            data TIMESTAMPTZ DEFAULT NOW()
+        );
     `);
 
     console.log('POSTGRES: tabelas verificadas/criadas.');
@@ -204,38 +251,182 @@ async function inicializarBanco() {
     }
 }
 
-inicializarBanco();
+setImmediate(() => {
+    inicializarBanco().catch(error => {
+        console.error('POSTGRES ERRO NO ARRANQUE:', error.message);
+    });
+});
+
+app.post('/utilizadores', async (req, res) => {
+    try {
+        const {
+            nome,
+            telefone,
+            tipo,
+            pin,
+            ownerToken
+        } = req.body;
+
+        const nomeLimpo = String(nome || '').trim();
+        const telefoneLimpo = String(telefone || '').trim();
+        const tipoLimpo = String(tipo || '').trim().toLowerCase();
+        const pinLimpo = String(pin || '').trim();
+
+        if (!nomeLimpo || !telefoneLimpo || !tipoLimpo || !pinLimpo) {
+            return res.status(400).json({
+                erro: 'Preencha todos os campos obrigatórios.'
+            });
+        }
+
+        if (!['agricultor', 'comprador'].includes(tipoLimpo)) {
+            return res.status(400).json({
+                erro: 'Tipo de perfil inválido.'
+            });
+        }
+
+        if (!/^\d{4,6}$/.test(pinLimpo)) {
+            return res.status(400).json({
+                erro: 'O PIN deve ter entre 4 e 6 dígitos.'
+            });
+        }
+
+        const utilizadorExistente = await pool.query(
+            `SELECT id FROM utilizadores WHERE telefone = $1`,
+            [telefoneLimpo]
+        );
+
+        if (utilizadorExistente.rowCount > 0) {
+            return res.status(409).json({
+                erro: 'Este número de telefone já está registado.'
+            });
+        }
+
+        const tokenFinal =
+            String(ownerToken || '').trim() ||
+            crypto.randomUUID();
+
+        const pinHash = gerarPinHash(pinLimpo);
+
+        const resultado = await pool.query(
+            `INSERT INTO utilizadores
+            (nome, telefone, tipo, pin_hash, owner_token)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, nome, telefone, tipo, owner_token, data`,
+            [
+                nomeLimpo,
+                telefoneLimpo,
+                tipoLimpo,
+                pinHash,
+                tokenFinal
+            ]
+        );
+
+        res.status(201).json({
+            mensagem: 'Conta criada com sucesso!',
+            utilizador: resultado.rows[0]
+        });
+
+    } catch (error) {
+        console.error(
+            'ERRO AO CRIAR UTILIZADOR:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao criar a conta.'
+        });
+    }
+});
+
+
+app.post('/login', async (req, res) => {
+    try {
+        const telefoneLimpo = String(req.body.telefone || '').trim();
+        const pinLimpo = String(req.body.pin || '').trim();
+
+        if (!telefoneLimpo || !pinLimpo) {
+            return res.status(400).json({
+                erro: 'Informe o telefone e o PIN.'
+            });
+        }
+
+        const resultado = await pool.query(
+            `SELECT id, nome, telefone, tipo, pin_hash, owner_token, data
+             FROM utilizadores
+             WHERE telefone = $1`,
+            [telefoneLimpo]
+        );
+
+        if (resultado.rowCount === 0) {
+            return res.status(401).json({
+                erro: 'Telefone ou PIN incorreto.'
+            });
+        }
+
+        const utilizador = resultado.rows[0];
+
+        if (!verificarPin(pinLimpo, utilizador.pin_hash)) {
+            return res.status(401).json({
+                erro: 'Telefone ou PIN incorreto.'
+            });
+        }
+
+        delete utilizador.pin_hash;
+
+        res.json({
+            mensagem: 'Login efetuado com sucesso!',
+            utilizador
+        });
+
+    } catch (error) {
+        console.error(
+            'ERRO NO LOGIN:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao efetuar login.'
+        });
+    }
+});
+
 
 app.get('/produtos', async (req, res) => {
     try {
-        let query = `
-            SELECT id, vendedor, produto, preco, quantidade,
-                   provincia, contacto, imagem, data, owner_token
-            FROM produtos`;
-        const valores = [];
-        const filtros = [];
-
         const { provincia, produto } = req.query;
 
+        // Carregar do PostgreSQL apenas quando o cache estiver vazio.
+        if (!produtosCache) {
+            const resultado = await pool.query(`
+                SELECT id, vendedor, produto, preco, quantidade,
+                       provincia, contacto, imagem, data, owner_token
+                FROM produtos
+                ORDER BY id DESC
+            `);
+
+            produtosCache = resultado.rows;
+            console.log('PRODUTOS: cache atualizado com', produtosCache.length, 'produtos.');
+        }
+
+        let produtos = produtosCache;
+
+        // Aplicar filtros sobre o cache, sem nova consulta ao PostgreSQL.
         if (provincia) {
-            valores.push(provincia);
-            filtros.push(`provincia ILIKE $${valores.length}`);
+            produtos = produtos.filter(item =>
+                String(item.provincia || '').toLowerCase() ===
+                String(provincia).toLowerCase()
+            );
         }
 
         if (produto) {
-            valores.push(`%${produto}%`);
-            filtros.push(`produto ILIKE $${valores.length}`);
+            const termo = String(produto).toLowerCase();
+
+            produtos = produtos.filter(item =>
+                String(item.produto || '').toLowerCase().includes(termo)
+            );
         }
 
-        if (filtros.length) {
-            query += ' WHERE ' + filtros.join(' AND ');
-        }
-
-        query += ' ORDER BY id DESC';
-
-        const resultado = await pool.query(query, valores);
-
-        res.json(resultado.rows);
+        res.json(produtos);
 
     } catch (error) {
         console.error('ERRO AO CARREGAR PRODUTOS:', error.message);
@@ -305,6 +496,9 @@ app.post('/cadastrar-produto', upload.single('imagem'), async (req, res) => {
         );
 
         const produtoGuardado = resultado.rows[0];
+
+        // O produto mudou: invalidar o cache.
+        produtosCache = null;
 
         let provaWeb3 = null;
 
@@ -459,6 +653,9 @@ app.put('/produtos/:id', upload.single('imagem'), async (req, res) => {
             ]
         );
 
+        // O produto mudou: invalidar o cache.
+        produtosCache = null;
+
         res.json({
             mensagem: ehAdministrador
                 ? 'Produto atualizado pelo administrador com sucesso!'
@@ -505,6 +702,9 @@ app.delete('/produtos/:id', async (req, res) => {
                 });
             }
 
+            // Produto removido: invalidar o cache.
+            produtosCache = null;
+
             return res.json({
                 mensagem: 'Produto removido pelo administrador com sucesso.'
             });
@@ -529,6 +729,9 @@ app.delete('/produtos/:id', async (req, res) => {
                 erro: 'Não tens autorização para remover este produto.'
             });
         }
+
+        // Produto removido: invalidar o cache.
+        produtosCache = null;
 
         res.json({
             mensagem: 'Produto removido com sucesso.'
@@ -656,6 +859,122 @@ app.delete('/precisos/:id', async (req, res) => {
 
         res.status(500).json({
             erro: 'Erro ao remover a necessidade.'
+        });
+    }
+});
+
+app.put('/precisos/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const {
+            comprador,
+            produtoDesejado,
+            quantidade,
+            provincia,
+            contacto
+        } = req.body;
+
+        const ownerToken = req.headers['x-owner-token'];
+        const adminToken = req.headers['x-admin-token'];
+
+        const adminTokenConfigurado =
+            process.env.STARTUP_AGRO_ADMIN_TOKEN;
+
+        if (!comprador || !produtoDesejado || !provincia || !contacto) {
+            return res.status(400).json({
+                erro: 'Preencha todos os campos obrigatórios.'
+            });
+        }
+
+        // Administrador pode editar qualquer necessidade.
+        if (
+            adminTokenConfigurado &&
+            adminToken === adminTokenConfigurado
+        ) {
+            const resultadoAdmin = await pool.query(
+                `UPDATE precisos
+                 SET comprador = $1,
+                     produto_desejado = $2,
+                     quantidade = $3,
+                     provincia = $4,
+                     contacto = $5
+                 WHERE id = $6
+                 RETURNING id, comprador,
+                           produto_desejado AS "produtoDesejado",
+                           quantidade, provincia, contacto,
+                           data, owner_token`,
+                [
+                    comprador,
+                    produtoDesejado,
+                    quantidade || '1',
+                    provincia,
+                    contacto,
+                    id
+                ]
+            );
+
+            if (resultadoAdmin.rowCount === 0) {
+                return res.status(404).json({
+                    erro: 'Necessidade não encontrada.'
+                });
+            }
+
+            return res.json({
+                mensagem: 'Necessidade atualizada pelo administrador com sucesso.',
+                pedido: resultadoAdmin.rows[0]
+            });
+        }
+
+        // Normalmente, apenas o próprio comprador pode editar.
+        if (!ownerToken) {
+            return res.status(401).json({
+                erro: 'Autorização necessária.'
+            });
+        }
+
+        const resultado = await pool.query(
+            `UPDATE precisos
+             SET comprador = $1,
+                 produto_desejado = $2,
+                 quantidade = $3,
+                 provincia = $4,
+                 contacto = $5
+             WHERE id = $6 AND owner_token = $7
+             RETURNING id, comprador,
+                       produto_desejado AS "produtoDesejado",
+                       quantidade, provincia, contacto,
+                       data, owner_token`,
+            [
+                comprador,
+                produtoDesejado,
+                quantidade || '1',
+                provincia,
+                contacto,
+                id,
+                ownerToken
+            ]
+        );
+
+        if (resultado.rowCount === 0) {
+            return res.status(403).json({
+                erro: 'Não tens autorização para editar esta necessidade.'
+            });
+        }
+
+        res.json({
+            mensagem: 'Necessidade atualizada com sucesso.',
+            pedido: resultado.rows[0]
+        });
+
+    } catch (error) {
+        console.error(
+            'ERRO AO EDITAR NECESSIDADE:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao editar a necessidade.'
         });
     }
 });
