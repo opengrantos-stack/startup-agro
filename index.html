@@ -802,14 +802,47 @@ button.btn-blue {
         const API = '';
         let utilizadorAtual = null;
 
+        function gerarOwnerToken() {
+            if (window.crypto && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+
+            return 'owner-' +
+                Date.now().toString(36) +
+                '-' +
+                Math.random().toString(36).slice(2) +
+                '-' +
+                Math.random().toString(36).slice(2);
+        }
+
         function fazerLogin(e) {
             e.preventDefault();
+
             const nome = document.getElementById('loginNome').value.trim();
             const tipo = document.getElementById('loginTipo').value;
+
             if (!nome || !tipo) return;
 
-            utilizadorAtual = { nome, tipo };
-            localStorage.setItem('agro_user', JSON.stringify(utilizadorAtual));
+            const utilizadorAnterior =
+                JSON.parse(localStorage.getItem('agro_user') || 'null');
+
+            const ownerToken =
+                utilizadorAnterior &&
+                utilizadorAnterior.ownerToken
+                    ? utilizadorAnterior.ownerToken
+                    : gerarOwnerToken();
+
+            utilizadorAtual = {
+                nome,
+                tipo,
+                ownerToken
+            };
+
+            localStorage.setItem(
+                'agro_user',
+                JSON.stringify(utilizadorAtual)
+            );
+
             aplicarSessao();
         }
 
@@ -817,6 +850,19 @@ button.btn-blue {
             const salvo = localStorage.getItem('agro_user');
             if (salvo) {
                 utilizadorAtual = JSON.parse(salvo);
+
+                // Compatibilidade com sessões antigas:
+                // se o utilizador ainda não tiver ownerToken,
+                // o sistema cria um automaticamente.
+                if (!utilizadorAtual.ownerToken) {
+                    utilizadorAtual.ownerToken = gerarOwnerToken();
+
+                    localStorage.setItem(
+                        'agro_user',
+                        JSON.stringify(utilizadorAtual)
+                    );
+                }
+
                 document.getElementById('seccaoLogin').classList.add('hidden');
                 document.getElementById('seccaoApp').classList.remove('hidden');
 
@@ -1139,6 +1185,10 @@ button.btn-blue {
             formData.append('quantidade', document.getElementById('produtoQtd').value);
             formData.append('provincia', document.getElementById('provinciaVendedor').value);
             formData.append('contacto', document.getElementById('contactoVendedor').value);
+
+            // Identificação técnica automática do proprietário.
+            // O utilizador nunca precisa ver ou inserir este token.
+            formData.append('ownerToken', utilizadorAtual.ownerToken);
             
             const cameraInput = document.getElementById('cameraInput');
             const galleryInput = document.getElementById('galleryInput');
