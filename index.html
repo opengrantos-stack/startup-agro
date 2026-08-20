@@ -1254,7 +1254,9 @@ button.btn-blue {
         }
 
         async function editarMeuProduto(id) {
-            const produto = produtosAtuais.find(p => p.id === id);
+            const produto = produtosAtuais.find(
+                p => String(p.id) === String(id)
+            );
 
             if (!produto) {
                 alert('Produto não encontrado.');
@@ -1264,45 +1266,91 @@ button.btn-blue {
             if (
                 !utilizadorAtual ||
                 !utilizadorAtual.ownerToken ||
-                produto.owner_token !== utilizadorAtual.ownerToken
+                String(produto.owner_token) !==
+                    String(utilizadorAtual.ownerToken)
             ) {
-                alert('Não tens autorização para editar este produto.');
+                alert(
+                    'Não tens autorização para editar este produto.'
+                );
                 return;
             }
 
-            document.getElementById('produtoEditandoId').value = produto.id;
-            document.getElementById('produtoNome').value = produto.produto || '';
-            document.getElementById('produtoPreco').value = produto.preco || '';
-            document.getElementById('produtoQtd').value = produto.quantidade || '';
-            document.getElementById('provinciaVendedor').value = produto.provincia || '';
-            document.getElementById('contactoVendedor').value = produto.contacto || '';
+            // Fechar a janela de detalhes do produto.
+            fecharDetalhesProduto();
 
+            // Preencher o formulário com os dados atuais.
+            document.getElementById(
+                'produtoEditandoId'
+            ).value = produto.id;
+
+            document.getElementById(
+                'produtoNome'
+            ).value = produto.produto || '';
+
+            document.getElementById(
+                'produtoPreco'
+            ).value = produto.preco || '';
+
+            document.getElementById(
+                'produtoQtd'
+            ).value = produto.quantidade || '';
+
+            document.getElementById(
+                'provinciaVendedor'
+            ).value = produto.provincia || '';
+
+            document.getElementById(
+                'contactoVendedor'
+            ).value = produto.contacto || '';
+
+            // Não reutilizar automaticamente a imagem antiga.
             document.getElementById('cameraInput').value = '';
             document.getElementById('galleryInput').value = '';
 
-            const botao = document.getElementById('botaoSubmitProduto');
-            const cancelar = document.getElementById('botaoCancelarEdicaoProduto');
-            const formulario = document.getElementById('formPublicarProduto');
-            const toggle = document.getElementById('togglePublicarProduto');
+            const botao =
+                document.getElementById(
+                    'botaoSubmitProduto'
+                );
+
+            const cancelar =
+                document.getElementById(
+                    'botaoCancelarEdicaoProduto'
+                );
+
+            const formulario =
+                document.getElementById(
+                    'formPublicarProduto'
+                );
+
+            const toggle =
+                document.getElementById(
+                    'togglePublicarProduto'
+                );
 
             if (botao) {
-                botao.textContent = '💾 Guardar alterações';
+                botao.textContent =
+                    '💾 Guardar alterações';
             }
 
             if (cancelar) {
                 cancelar.style.display = 'block';
             }
 
-            if (formulario && toggle) {
+            if (formulario) {
                 formulario.classList.add('open');
+            }
+
+            if (toggle) {
                 toggle.classList.add('open');
             }
 
-            document.getElementById('formPublicarProduto')
-                ?.scrollIntoView({
+            // Levar o utilizador diretamente para o formulário.
+            if (formulario) {
+                formulario.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
                 });
+            }
         }
 
 
