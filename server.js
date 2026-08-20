@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -92,6 +93,7 @@ async function criarTabelas() {
             provincia TEXT NOT NULL,
             contacto TEXT,
             imagem TEXT,
+            owner_token TEXT,
             data TIMESTAMPTZ DEFAULT NOW()
         );
 
@@ -104,6 +106,11 @@ async function criarTabelas() {
             contacto TEXT NOT NULL,
             data TIMESTAMPTZ DEFAULT NOW()
         );
+    `);
+
+    await pool.query(`
+        ALTER TABLE produtos
+        ADD COLUMN IF NOT EXISTS owner_token TEXT;
     `);
 
     console.log('POSTGRES: tabelas verificadas/criadas.');
@@ -198,7 +205,10 @@ inicializarBanco();
 
 app.get('/produtos', async (req, res) => {
     try {
-        let query = 'SELECT * FROM produtos';
+        let query = `
+            SELECT id, vendedor, produto, preco, quantidade,
+                   provincia, contacto, imagem, data
+            FROM produtos`;
         const valores = [];
         const filtros = [];
 
@@ -234,9 +244,17 @@ app.get('/produtos', async (req, res) => {
 // Rota de cadastro com suporte a imagem
 app.post('/cadastrar-produto', upload.single('imagem'), async (req, res) => {
     try {
-        const { vendedor, produto, preco, quantidade, provincia, contacto } = req.body;
+        const {
+            vendedor,
+            produto,
+            preco,
+            quantidade,
+            provincia,
+            contacto,
+            ownerToken
+        } = req.body;
 
-        if (!vendedor || !produto || !preco || !provincia || !contacto) {
+        if (!vendedor || !produto || !preco || !provincia || !contacto || !ownerToken) {
             return res.status(400).json({ erro: 'Preencha todos os campos obrigatórios.' });
         }
 
@@ -268,8 +286,8 @@ app.post('/cadastrar-produto', upload.single('imagem'), async (req, res) => {
 
         const resultado = await pool.query(
             `INSERT INTO produtos
-            (vendedor, produto, preco, quantidade, provincia, contacto, imagem)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            (vendedor, produto, preco, quantidade, provincia, contacto, imagem, owner_token)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *`,
             [
                 vendedor,
@@ -278,7 +296,8 @@ app.post('/cadastrar-produto', upload.single('imagem'), async (req, res) => {
                 quantidade || '1',
                 provincia,
                 contacto,
-                caminhoImagem
+                caminhoImagem,
+                ownerToken
             ]
         );
 
@@ -313,6 +332,72 @@ app.post('/cadastrar-produto', upload.single('imagem'), async (req, res) => {
     } catch (error) {
         console.error('ERRO AO GUARDAR PRODUTO:', error.message);
         res.status(500).json({ erro: 'Erro ao guardar o produto.' });
+    }
+});
+
+
+app.delete('/produtos/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const ownerToken = req.headers['x-owner-token'];
+        const adminToken = req.headers['x-admin-token'];
+
+        const adminTokenConfigurado = process.env.STARTUP_AGRO_ADMIN_TOKEN;
+
+        // O proprietário da plataforma pode remover qualquer produto.
+        if (
+            adminTokenConfigurado &&
+            adminToken === adminTokenConfigurado
+        ) {
+            const resultadoAdmin = await pool.query(
+                `DELETE FROM produtos
+                 WHERE id = $1
+                 RETURNING id`,
+                [id]
+            );
+
+            if (resultadoAdmin.rowCount === 0) {
+                return res.status(404).json({
+                    erro: 'Produto não encontrado.'
+                });
+            }
+
+            return res.json({
+                mensagem: 'Produto removido pelo administrador com sucesso.'
+            });
+        }
+
+        // Caso normal: apenas o proprietário do produto pode removê-lo.
+        if (!ownerToken) {
+            return res.status(401).json({
+                erro: 'Autorização necessária.'
+            });
+        }
+
+        const resultado = await pool.query(
+            `DELETE FROM produtos
+             WHERE id = $1 AND owner_token = $2
+             RETURNING id`,
+            [id, ownerToken]
+        );
+
+        if (resultado.rowCount === 0) {
+            return res.status(403).json({
+                erro: 'Não tens autorização para remover este produto.'
+            });
+        }
+
+        res.json({
+            mensagem: 'Produto removido com sucesso.'
+        });
+
+    } catch (error) {
+        console.error('ERRO AO REMOVER PRODUTO:', error.message);
+
+        res.status(500).json({
+            erro: 'Erro ao remover o produto.'
+        });
     }
 });
 

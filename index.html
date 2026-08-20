@@ -603,6 +603,12 @@ button.btn-blue {
             <div id="painelAgricultor" class="card-section hidden">
 
                 <button type="button"
+                        onclick="entrarModoAdministrador()"
+                        style="width:100%; margin:10px 0; padding:12px; border:1px solid #999; border-radius:10px; background:#fff; font-weight:700; cursor:pointer;">
+                    🔐 Modo administrador
+                </button>
+
+                <button type="button"
                         id="togglePublicarProduto"
                         class="publish-toggle"
                         onclick="alternarPublicacaoProduto()">
@@ -840,6 +846,90 @@ button.btn-blue {
 
         let produtosAtuais = [];
 
+        // ==============================
+        // MODO ADMINISTRADOR
+        // ==============================
+
+        let startupAgroAdminToken =
+            sessionStorage.getItem('startupAgroAdminToken') || '';
+
+        function entrarModoAdministrador() {
+            const token = prompt(
+                'Introduz o token de administrador da Startup-Agro:'
+            );
+
+            if (!token) return;
+
+            startupAgroAdminToken = token.trim();
+
+            sessionStorage.setItem(
+                'startupAgroAdminToken',
+                startupAgroAdminToken
+            );
+
+            alert('Modo administrador ativado.');
+
+            carregarProdutos();
+        }
+
+        function sairModoAdministrador() {
+            startupAgroAdminToken = '';
+
+            sessionStorage.removeItem(
+                'startupAgroAdminToken'
+            );
+
+            alert('Modo administrador desativado.');
+
+            carregarProdutos();
+        }
+
+        async function removerProdutoComoAdministrador(id) {
+            const confirmar = confirm(
+                'ATENÇÃO: vais eliminar este cadastro da plataforma.\n\n' +
+                'Esta ação não pode ser desfeita.\n\n' +
+                'Continuar?'
+            );
+
+            if (!confirmar) return;
+
+            try {
+                const res = await fetch(`${API}/produtos/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'x-admin-token': startupAgroAdminToken
+                    }
+                });
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    alert(
+                        dados.erro ||
+                        'Não foi possível eliminar o cadastro.'
+                    );
+
+                    if (res.status === 401 || res.status === 403) {
+                        sairModoAdministrador();
+                    }
+
+                    return;
+                }
+
+                alert(
+                    dados.mensagem ||
+                    'Cadastro eliminado com sucesso.'
+                );
+
+                fecharDetalhesProduto();
+                carregarProdutos();
+
+            } catch (erro) {
+                console.error(erro);
+                alert('Erro de ligação ao servidor.');
+            }
+        }
+
         function formatarDataPublicacao(data) {
             if (!data) return 'Data não informada';
 
@@ -960,6 +1050,19 @@ button.btn-blue {
                         <div style="margin: 10px 0 16px; padding: 10px; background: #f5f5f5; border-radius: 8px;">
                             🕒 <strong>Publicado em:</strong> ${formatarDataPublicacao(p.data)}
                         </div>
+
+                        ${
+                            startupAgroAdminToken
+                            ? `
+                                <button
+                                    type="button"
+                                    onclick="removerProdutoComoAdministrador(${p.id})"
+                                    style="width:100%; margin:0 0 16px; padding:13px; border:1px solid #c62828; border-radius:10px; background:#fff; color:#c62828; font-weight:700; cursor:pointer;">
+                                    🗑️ Eliminar cadastro deste produto
+                                </button>
+                              `
+                            : ''
+                        }
 
                         <div class="product-detail-list">
 
