@@ -339,6 +339,145 @@ app.post('/cadastrar-produto', upload.single('imagem'), async (req, res) => {
 });
 
 
+app.put('/produtos/:id', upload.single('imagem'), async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const {
+            vendedor,
+            produto,
+            preco,
+            quantidade,
+            provincia,
+            contacto,
+            ownerToken
+        } = req.body;
+
+        const ownerTokenHeader = req.headers['x-owner-token'];
+        const adminToken = req.headers['x-admin-token'];
+        const adminTokenConfigurado =
+            process.env.STARTUP_AGRO_ADMIN_TOKEN;
+
+        if (!vendedor || !produto || !preco || !provincia || !contacto) {
+            return res.status(400).json({
+                erro: 'Preencha todos os campos obrigatórios.'
+            });
+        }
+
+        let imagemAtual = null;
+
+        const existente = await pool.query(
+            `SELECT imagem FROM produtos WHERE id = $1`,
+            [id]
+        );
+
+        if (existente.rowCount === 0) {
+            return res.status(404).json({
+                erro: 'Produto não encontrado.'
+            });
+        }
+
+        imagemAtual = existente.rows[0].imagem || '';
+
+        // Administrador pode editar qualquer produto.
+        const ehAdministrador =
+            adminTokenConfigurado &&
+            adminToken === adminTokenConfigurado;
+
+        // Proprietário precisa comprovar a posse pelo token.
+        if (!ehAdministrador) {
+            if (!ownerTokenHeader || ownerTokenHeader !== ownerToken) {
+                return res.status(403).json({
+                    erro: 'Não tens autorização para editar este produto.'
+                });
+            }
+
+            const proprietario = await pool.query(
+                `SELECT id FROM produtos
+                 WHERE id = $1 AND owner_token = $2`,
+                [id, ownerTokenHeader]
+            );
+
+            if (proprietario.rowCount === 0) {
+                return res.status(403).json({
+                    erro: 'Não tens autorização para editar este produto.'
+                });
+            }
+        }
+
+        let caminhoImagem = imagemAtual;
+
+        if (req.file) {
+            const nomeArquivo =
+                `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('Produtos')
+                .upload(nomeArquivo, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error(
+                    'ERRO SUPABASE UPLOAD AO EDITAR:',
+                    uploadError.message
+                );
+
+                return res.status(500).json({
+                    erro: 'Erro ao enviar a nova imagem.'
+                });
+            }
+
+            const { data: urlData } = supabase.storage
+                .from('Produtos')
+                .getPublicUrl(nomeArquivo);
+
+            caminhoImagem = urlData.publicUrl;
+        }
+
+        const resultado = await pool.query(
+            `UPDATE produtos
+             SET vendedor = $1,
+                 produto = $2,
+                 preco = $3,
+                 quantidade = $4,
+                 provincia = $5,
+                 contacto = $6,
+                 imagem = $7
+             WHERE id = $8
+             RETURNING *`,
+            [
+                vendedor,
+                produto,
+                preco,
+                quantidade || '1',
+                provincia,
+                contacto,
+                caminhoImagem,
+                id
+            ]
+        );
+
+        res.json({
+            mensagem: ehAdministrador
+                ? 'Produto atualizado pelo administrador com sucesso!'
+                : 'Produto atualizado com sucesso!',
+            produto: resultado.rows[0]
+        });
+
+    } catch (error) {
+        console.error(
+            'ERRO AO EDITAR PRODUTO:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao editar o produto.'
+        });
+    }
+});
+
 app.delete('/produtos/:id', async (req, res) => {
     try {
         const { id } = req.params;
