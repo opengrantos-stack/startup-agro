@@ -111,6 +111,9 @@ async function criarTabelas() {
     await pool.query(`
         ALTER TABLE produtos
         ADD COLUMN IF NOT EXISTS owner_token TEXT;
+
+        ALTER TABLE precisos
+        ADD COLUMN IF NOT EXISTS owner_token TEXT;
     `);
 
     console.log('POSTGRES: tabelas verificadas/criadas.');
@@ -422,7 +425,7 @@ app.get('/web3/provas/:produtoId', async (req, res) => {
 
 app.get('/precisos', async (req, res) => {
     try {
-        let query = 'SELECT id, comprador, produto_desejado AS "produtoDesejado", quantidade, provincia, contacto, data FROM precisos';
+        let query = 'SELECT id, comprador, produto_desejado AS "produtoDesejado", quantidade, provincia, contacto, data, owner_token FROM precisos';
         const valores = [];
         const filtros = [];
 
@@ -449,9 +452,85 @@ app.get('/precisos', async (req, res) => {
     }
 });
 
+app.delete('/precisos/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const ownerToken = req.headers['x-owner-token'];
+        const adminToken = req.headers['x-admin-token'];
+
+        const adminTokenConfigurado =
+            process.env.STARTUP_AGRO_ADMIN_TOKEN;
+
+        // Administrador pode remover qualquer necessidade.
+        if (
+            adminTokenConfigurado &&
+            adminToken === adminTokenConfigurado
+        ) {
+            const resultadoAdmin = await pool.query(
+                `DELETE FROM precisos
+                 WHERE id = $1
+                 RETURNING id`,
+                [id]
+            );
+
+            if (resultadoAdmin.rowCount === 0) {
+                return res.status(404).json({
+                    erro: 'Necessidade não encontrada.'
+                });
+            }
+
+            return res.json({
+                mensagem: 'Necessidade removida pelo administrador com sucesso.'
+            });
+        }
+
+        // Normalmente, apenas o próprio comprador pode remover.
+        if (!ownerToken) {
+            return res.status(401).json({
+                erro: 'Autorização necessária.'
+            });
+        }
+
+        const resultado = await pool.query(
+            `DELETE FROM precisos
+             WHERE id = $1 AND owner_token = $2
+             RETURNING id`,
+            [id, ownerToken]
+        );
+
+        if (resultado.rowCount === 0) {
+            return res.status(403).json({
+                erro: 'Não tens autorização para remover esta necessidade.'
+            });
+        }
+
+        res.json({
+            mensagem: 'Necessidade removida com sucesso.'
+        });
+
+    } catch (error) {
+        console.error(
+            'ERRO AO REMOVER NECESSIDADE:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao remover a necessidade.'
+        });
+    }
+});
+
 app.post('/precisos', async (req, res) => {
     try {
-        const { comprador, produtoDesejado, quantidade, provincia, contacto } = req.body;
+        const {
+            comprador,
+            produtoDesejado,
+            quantidade,
+            provincia,
+            contacto,
+            ownerToken
+        } = req.body;
 
         if (!comprador || !produtoDesejado || !provincia || !contacto) {
             return res.status(400).json({
@@ -461,15 +540,16 @@ app.post('/precisos', async (req, res) => {
 
         const resultado = await pool.query(
             `INSERT INTO precisos
-            (comprador, produto_desejado, quantidade, provincia, contacto)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, comprador, produto_desejado AS "produtoDesejado", quantidade, provincia, contacto, data`,
+            (comprador, produto_desejado, quantidade, provincia, contacto, owner_token)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id, comprador, produto_desejado AS "produtoDesejado", quantidade, provincia, contacto, data, owner_token`,
             [
                 comprador,
                 produtoDesejado,
                 quantidade || '1',
                 provincia,
-                contacto
+                contacto,
+                ownerToken || null
             ]
         );
 

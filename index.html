@@ -1294,15 +1294,164 @@ button.btn-blue {
                     return;
                 }
                 precisos.forEach(p => {
+                    const podeEliminar =
+                        utilizadorAtual &&
+                        utilizadorAtual.ownerToken &&
+                        p.owner_token === utilizadorAtual.ownerToken;
+
                     container.innerHTML += `
                         <div class="item-card blue">
                             <h4>📢 Procura: ${p.produtoDesejado}</h4>
-                            <p><strong>Comprador:</strong> ${p.comprador} (${p.provincia})</p>
-                            <p><strong>Quantidade:</strong> ${p.quantidade}</p>
-                            <p class="tag-contacto">Contacto: 📞 ${p.contacto}</p>
+
+                            <p>
+                                <strong>Comprador:</strong>
+                                ${p.comprador} (${p.provincia})
+                            </p>
+
+                            <p>
+                                <strong>Quantidade:</strong>
+                                ${p.quantidade}
+                            </p>
+
+                            <p class="tag-contacto">
+                                Contacto: 📞 ${p.contacto}
+                            </p>
+
+                            <p style="margin:10px 0; padding:9px; background:#f5f5f5; border-radius:8px;">
+                                🕒 <strong>Publicado em:</strong>
+                                ${formatarDataPublicacao(p.data)}
+                            </p>
+
+                            ${
+                                podeEliminar
+                                ? `
+                                    <button
+                                        type="button"
+                                        onclick="removerMinhaNecessidade(${p.id})"
+                                        style="width:100%; margin-top:10px; padding:12px; border:1px solid #c62828; border-radius:10px; background:#fff; color:#c62828; font-weight:700; cursor:pointer;">
+                                        🗑️ Eliminar minha necessidade
+                                    </button>
+                                  `
+                                : ''
+                            }
+
+                            ${
+                                startupAgroAdminToken
+                                ? `
+                                    <button
+                                        type="button"
+                                        onclick="removerNecessidadeComoAdministrador(${p.id})"
+                                        style="width:100%; margin-top:10px; padding:12px; border:1px solid #c62828; border-radius:10px; background:#fff; color:#c62828; font-weight:700; cursor:pointer;">
+                                        🗑️ Eliminar cadastro desta necessidade
+                                    </button>
+                                  `
+                                : ''
+                            }
                         </div>`;
                 });
             } catch (e) { console.error(e); }
+        }
+
+        async function removerMinhaNecessidade(id) {
+            const confirmar = confirm(
+                'Tens a certeza que queres eliminar esta necessidade?\n\n' +
+                'Esta ação não pode ser desfeita.'
+            );
+
+            if (!confirmar) return;
+
+            if (!utilizadorAtual || !utilizadorAtual.ownerToken) {
+                alert(
+                    'Não foi possível identificar o proprietário desta necessidade.'
+                );
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API}/precisos/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'x-owner-token': utilizadorAtual.ownerToken
+                    }
+                });
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    alert(
+                        dados.erro ||
+                        'Não foi possível eliminar a necessidade.'
+                    );
+                    return;
+                }
+
+                alert(
+                    dados.mensagem ||
+                    'Necessidade eliminada com sucesso.'
+                );
+
+                carregarPrecisos();
+
+            } catch (error) {
+                console.error(
+                    'ERRO AO ELIMINAR NECESSIDADE:',
+                    error
+                );
+
+                alert(
+                    'Não foi possível comunicar com o servidor.'
+                );
+            }
+        }
+
+        async function removerNecessidadeComoAdministrador(id) {
+            const confirmar = confirm(
+                'Tens a certeza que queres eliminar esta necessidade como administrador?\n\n' +
+                'Esta ação não pode ser desfeita.'
+            );
+
+            if (!confirmar) return;
+
+            if (!startupAgroAdminToken) {
+                alert('Modo administrador não está ativo.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API}/precisos/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'x-admin-token': startupAgroAdminToken
+                    }
+                });
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    alert(
+                        dados.erro ||
+                        'Não foi possível eliminar a necessidade.'
+                    );
+                    return;
+                }
+
+                alert(
+                    dados.mensagem ||
+                    'Necessidade eliminada com sucesso.'
+                );
+
+                carregarPrecisos();
+
+            } catch (error) {
+                console.error(
+                    'ERRO AO ELIMINAR NECESSIDADE COMO ADMINISTRADOR:',
+                    error
+                );
+
+                alert(
+                    'Não foi possível comunicar com o servidor.'
+                );
+            }
         }
 
         async function registarNecessidade(e) {
@@ -1312,7 +1461,11 @@ button.btn-blue {
                 produtoDesejado: document.getElementById('produtoDesejado').value,
                 quantidade: document.getElementById('qtdDesejada').value,
                 provincia: document.getElementById('provinciaComprador').value,
-                contacto: document.getElementById('contactoComprador').value
+                contacto: document.getElementById('contactoComprador').value,
+
+                // Identificação técnica automática do proprietário.
+                // O comprador nunca precisa ver ou inserir este token.
+                ownerToken: utilizadorAtual.ownerToken
             };
 
             const res = await fetch(`${API}/precisos`, {
