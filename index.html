@@ -1412,29 +1412,22 @@ button.btn-blue {
 
                     return `
                         <div style="
-                            padding:12px;
-                            margin-bottom:10px;
-                            border:1px solid #e0e0e0;
-                            border-radius:10px;
-                            background:#fafafa;
+                            margin-bottom:12px;
                         ">
                             <div style="
-                                display:flex;
-                                justify-content:space-between;
-                                gap:10px;
-                                margin-bottom:5px;
-                            ">
-                                <strong>
-                                    👤 ${c.nome || 'Utilizador'}
-                                </strong>
-
-                                <small style="color:#777;">
-                                    ${formatarDataPublicacao(c.data)}
-                                </small>
-                            </div>
-
-                            <div style="
+                                display:block;
+                                width:100%;
+                                min-height:0;
+                                height:auto;
+                                padding:3px 8px;
+                                box-sizing:border-box;
+                                border:1px solid #e0e0e0;
+                                border-radius:8px;
+                                background:#fafafa;
+                                font-size:12px;
+                                line-height:1.2;
                                 white-space:pre-wrap;
+                                overflow-wrap:anywhere;
                                 word-break:break-word;
                             ">
                                 ${c.comentario}
@@ -1447,12 +1440,15 @@ button.btn-blue {
                                         type="button"
                                         onclick="eliminarComentario(${c.id}, ${produtoId})"
                                         style="
+                                            display:block;
                                             margin-top:8px;
                                             border:0;
-                                            background:none;
+                                            border-radius:6px;
+                                            background:#fbe9e7;
                                             color:#c62828;
                                             cursor:pointer;
-                                            padding:4px 0;
+                                            padding:3px 7px;
+                                            font-size:10px;
                                             font-weight:700;
                                         ">
                                         🗑️ Eliminar
@@ -1460,6 +1456,18 @@ button.btn-blue {
                                   `
                                 : ''
                             }
+
+                            <div style="
+                                margin-top:4px;
+                                margin-left:2px;
+                                font-size:10px;
+                                color:#777;
+                                line-height:1.3;
+                            ">
+                                👤 ${c.nome || 'Utilizador'}
+                                · ${formatarDataPublicacao(c.data)}
+                            </div>
+
                         </div>
                     `;
                 }).join('');
@@ -1474,6 +1482,26 @@ button.btn-blue {
                     '<div style="color:#c62828;">Erro ao carregar comentários.</div>';
             }
         }
+
+
+
+        // Fazer os campos de comentário crescerem
+        // automaticamente enquanto o utilizador escreve.
+        document.addEventListener('input', function(e) {
+
+            if (
+                e.target &&
+                (
+                    e.target.id === 'novoComentario' ||
+                    e.target.id === 'novoComentarioNecessidade'
+                )
+            ) {
+                e.target.style.height = '42px';
+                e.target.style.height =
+                    Math.min(e.target.scrollHeight, 180) + 'px';
+            }
+
+        });
 
 
         async function publicarComentario(produtoId) {
@@ -1533,6 +1561,7 @@ button.btn-blue {
                 }
 
                 campo.value = '';
+                campo.style.height = '42px';
 
                 await carregarComentariosProduto(produtoId);
 
@@ -1742,8 +1771,9 @@ button.btn-blue {
                                             placeholder="Escreva um comentário sobre este produto..."
                                             style="
                                                 width:100%;
-                                                min-height:90px;
-                                                padding:12px;
+                                                min-height:42px;
+                                                height:42px;
+                                                padding:10px 12px;
                                                 box-sizing:border-box;
                                                 border:1px solid #ccc;
                                                 border-radius:10px;
@@ -1766,7 +1796,7 @@ button.btn-blue {
                                                 font-weight:700;
                                                 cursor:pointer;
                                             ">
-                                            💬 Publicar comentário
+                                            💬 Comentar
                                         </button>
                                     </div>
                                   `
@@ -2226,30 +2256,23 @@ button.btn-blue {
 
                     return `
                         <div style="
-                            padding:12px;
-                            margin-bottom:10px;
-                            border:1px solid #e0e0e0;
-                            border-radius:10px;
-                            background:#fafafa;
+                            margin-bottom:12px;
                         ">
 
                             <div style="
-                                display:flex;
-                                justify-content:space-between;
-                                gap:10px;
-                                margin-bottom:5px;
-                            ">
-                                <strong>
-                                    👤 ${c.nome || 'Utilizador'}
-                                </strong>
-
-                                <small style="color:#777;">
-                                    ${formatarDataPublicacao(c.data)}
-                                </small>
-                            </div>
-
-                            <div style="
+                                display:block;
+                                width:100%;
+                                min-height:0;
+                                height:auto;
+                                padding:3px 8px;
+                                box-sizing:border-box;
+                                border:1px solid #e0e0e0;
+                                border-radius:8px;
+                                background:#fafafa;
+                                font-size:12px;
+                                line-height:1.2;
                                 white-space:pre-wrap;
+                                overflow-wrap:anywhere;
                                 word-break:break-word;
                             ">
                                 ${c.comentario}
@@ -2262,12 +2285,15 @@ button.btn-blue {
                                         type="button"
                                         onclick="eliminarComentarioNecessidade(${c.id}, ${necessidadeId})"
                                         style="
+                                            display:block;
                                             margin-top:8px;
                                             border:0;
-                                            background:none;
+                                            border-radius:6px;
+                                            background:#fbe9e7;
                                             color:#c62828;
                                             cursor:pointer;
-                                            padding:4px 0;
+                                            padding:3px 7px;
+                                            font-size:10px;
                                             font-weight:700;
                                         ">
                                         🗑️ Eliminar
@@ -2275,6 +2301,17 @@ button.btn-blue {
                                   `
                                 : ''
                             }
+
+                            <div style="
+                                margin-top:4px;
+                                margin-left:2px;
+                                font-size:10px;
+                                color:#777;
+                                line-height:1.3;
+                            ">
+                                👤 ${c.nome || 'Utilizador'}
+                                · ${formatarDataPublicacao(c.data)}
+                            </div>
 
                         </div>
                     `;
@@ -2349,6 +2386,7 @@ button.btn-blue {
                 }
 
                 campo.value = '';
+                campo.style.height = '42px';
 
                 await carregarComentariosNecessidade(
                     necessidadeId
@@ -2569,8 +2607,9 @@ button.btn-blue {
                                             placeholder="Escreva um comentário sobre esta necessidade..."
                                             style="
                                                 width:100%;
-                                                min-height:90px;
-                                                padding:12px;
+                                                min-height:42px;
+                                                height:42px;
+                                                padding:10px 12px;
                                                 box-sizing:border-box;
                                                 border:1px solid #ccc;
                                                 border-radius:10px;
@@ -2585,15 +2624,15 @@ button.btn-blue {
                                             style="
                                                 width:100%;
                                                 margin-top:8px;
-                                                padding:12px;
+                                                padding:7px 12px;
                                                 border:0;
-                                                border-radius:10px;
+                                                border-radius:8px;
                                                 background:#1976d2;
                                                 color:#fff;
                                                 font-weight:700;
                                                 cursor:pointer;
                                             ">
-                                            💬 Publicar comentário
+                                            💬 Comentar
                                         </button>
 
                                     </div>
