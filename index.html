@@ -1367,6 +1367,243 @@ button.btn-blue {
             }
         }
 
+
+        // ==============================
+        // COMENTÁRIOS DOS PRODUTOS
+        // ==============================
+
+        async function carregarComentariosProduto(produtoId) {
+            const container =
+                document.getElementById('comentariosProduto');
+
+            if (!container) return;
+
+            container.innerHTML =
+                '<div style="padding:10px 0; color:#666;">A carregar comentários...</div>';
+
+            try {
+                const res = await fetch(
+                    `${API}/produtos/${produtoId}/comentarios`
+                );
+
+                const comentarios = await res.json();
+
+                if (!res.ok) {
+                    container.innerHTML =
+                        '<div style="color:#c62828;">Não foi possível carregar os comentários.</div>';
+                    return;
+                }
+
+                if (comentarios.length === 0) {
+                    container.innerHTML =
+                        '<div style="padding:10px 0; color:#777;">Ainda não há comentários neste produto.</div>';
+                    return;
+                }
+
+                container.innerHTML = comentarios.map(c => {
+
+                    const souEu =
+                        utilizadorAtual &&
+                        utilizadorAtual.id === c.utilizador_id;
+
+                    const souAdministrador =
+                        utilizadorAtual &&
+                        utilizadorAtual.ehAdministrador;
+
+                    return `
+                        <div style="
+                            padding:12px;
+                            margin-bottom:10px;
+                            border:1px solid #e0e0e0;
+                            border-radius:10px;
+                            background:#fafafa;
+                        ">
+                            <div style="
+                                display:flex;
+                                justify-content:space-between;
+                                gap:10px;
+                                margin-bottom:5px;
+                            ">
+                                <strong>
+                                    👤 ${c.nome || 'Utilizador'}
+                                </strong>
+
+                                <small style="color:#777;">
+                                    ${formatarDataPublicacao(c.data)}
+                                </small>
+                            </div>
+
+                            <div style="
+                                white-space:pre-wrap;
+                                word-break:break-word;
+                            ">
+                                ${c.comentario}
+                            </div>
+
+                            ${
+                                souEu || souAdministrador
+                                ? `
+                                    <button
+                                        type="button"
+                                        onclick="eliminarComentario(${c.id}, ${produtoId})"
+                                        style="
+                                            margin-top:8px;
+                                            border:0;
+                                            background:none;
+                                            color:#c62828;
+                                            cursor:pointer;
+                                            padding:4px 0;
+                                            font-weight:700;
+                                        ">
+                                        🗑️ Eliminar
+                                    </button>
+                                  `
+                                : ''
+                            }
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error(
+                    'ERRO AO CARREGAR COMENTÁRIOS:',
+                    error
+                );
+
+                container.innerHTML =
+                    '<div style="color:#c62828;">Erro ao carregar comentários.</div>';
+            }
+        }
+
+
+        async function publicarComentario(produtoId) {
+
+            if (!utilizadorAtual || !utilizadorAtual.ownerToken) {
+                alert(
+                    'Precisas de iniciar sessão para comentar.'
+                );
+                return;
+            }
+
+            const campo =
+                document.getElementById('novoComentario');
+
+            if (!campo) return;
+
+            const comentario =
+                campo.value.trim();
+
+            if (!comentario) {
+                alert('Escreva um comentário.');
+                campo.focus();
+                return;
+            }
+
+            if (comentario.length > 500) {
+                alert(
+                    'O comentário não pode ultrapassar 500 caracteres.'
+                );
+                return;
+            }
+
+            try {
+                const res = await fetch(
+                    `${API}/produtos/${produtoId}/comentarios`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-owner-token':
+                                utilizadorAtual.ownerToken
+                        },
+                        body: JSON.stringify({
+                            comentario
+                        })
+                    }
+                );
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    alert(
+                        dados.erro ||
+                        'Não foi possível publicar o comentário.'
+                    );
+                    return;
+                }
+
+                campo.value = '';
+
+                await carregarComentariosProduto(produtoId);
+
+            } catch (error) {
+                console.error(
+                    'ERRO AO PUBLICAR COMENTÁRIO:',
+                    error
+                );
+
+                alert(
+                    'Não foi possível comunicar com o servidor.'
+                );
+            }
+        }
+
+
+        async function eliminarComentario(
+            comentarioId,
+            produtoId
+        ) {
+
+            const confirmar = confirm(
+                'Tens a certeza que queres eliminar este comentário?'
+            );
+
+            if (!confirmar) return;
+
+            if (!utilizadorAtual || !utilizadorAtual.ownerToken) {
+                alert(
+                    'Precisas de iniciar sessão.'
+                );
+                return;
+            }
+
+            try {
+                const res = await fetch(
+                    `${API}/comentarios/${comentarioId}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            'x-owner-token':
+                                utilizadorAtual.ownerToken
+                        }
+                    }
+                );
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    alert(
+                        dados.erro ||
+                        'Não foi possível eliminar o comentário.'
+                    );
+                    return;
+                }
+
+                await carregarComentariosProduto(produtoId);
+
+            } catch (error) {
+                console.error(
+                    'ERRO AO ELIMINAR COMENTÁRIO:',
+                    error
+                );
+
+                alert(
+                    'Não foi possível comunicar com o servidor.'
+                );
+            }
+        }
+
+
         function abrirDetalhesProduto(index) {
             const p = produtosAtuais[index];
             if (!p) return;
@@ -1484,6 +1721,75 @@ button.btn-blue {
 
                         ${contactoHtml}
 
+                        <!-- COMENTÁRIOS DO PRODUTO -->
+                        <div style="
+                            margin-top:20px;
+                            padding-top:16px;
+                            border-top:1px solid #e0e0e0;
+                        ">
+                            <h3 style="margin:0 0 12px;">
+                                💬 Comentários
+                            </h3>
+
+                            ${
+                                utilizadorAtual &&
+                                utilizadorAtual.ownerToken
+                                ? `
+                                    <div style="margin-bottom:16px;">
+                                        <textarea
+                                            id="novoComentario"
+                                            maxlength="500"
+                                            placeholder="Escreva um comentário sobre este produto..."
+                                            style="
+                                                width:100%;
+                                                min-height:90px;
+                                                padding:12px;
+                                                box-sizing:border-box;
+                                                border:1px solid #ccc;
+                                                border-radius:10px;
+                                                resize:vertical;
+                                                font-family:inherit;
+                                            "
+                                        ></textarea>
+
+                                        <button
+                                            type="button"
+                                            onclick="publicarComentario(${p.id})"
+                                            style="
+                                                width:100%;
+                                                margin-top:8px;
+                                                padding:12px;
+                                                border:0;
+                                                border-radius:10px;
+                                                background:var(--primary);
+                                                color:#fff;
+                                                font-weight:700;
+                                                cursor:pointer;
+                                            ">
+                                            💬 Publicar comentário
+                                        </button>
+                                    </div>
+                                  `
+                                : `
+                                    <div style="
+                                        padding:12px;
+                                        margin-bottom:14px;
+                                        background:#f5f5f5;
+                                        border-radius:10px;
+                                        color:#666;
+                                    ">
+                                        🔐 Inicie sessão para deixar um comentário.
+                                    </div>
+                                  `
+                            }
+
+                            <div id="comentariosProduto">
+                                <div style="padding:10px 0; color:#777;">
+                                    A carregar comentários...
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="product-proof">
                             ✓ <strong>Registo Startup-Agro</strong><br>
                             Informações deste produto disponibilizadas pelo produtor.
@@ -1502,6 +1808,8 @@ button.btn-blue {
             };
 
             document.body.style.overflow = 'hidden';
+        carregarComentariosProduto(p.id);
+
         }
 
         function fecharDetalhesProduto() {
@@ -1873,6 +2181,249 @@ button.btn-blue {
             }
         }
 
+
+        // ==============================
+        // COMENTÁRIOS DAS NECESSIDADES
+        // ==============================
+
+        async function carregarComentariosNecessidade(necessidadeId) {
+            const container =
+                document.getElementById('comentariosNecessidade');
+
+            if (!container) return;
+
+            container.innerHTML =
+                '<div style="padding:10px 0; color:#666;">A carregar comentários...</div>';
+
+            try {
+                const res = await fetch(
+                    `${API}/precisos/${necessidadeId}/comentarios`
+                );
+
+                const comentarios = await res.json();
+
+                if (!res.ok) {
+                    container.innerHTML =
+                        '<div style="color:#c62828;">Não foi possível carregar os comentários.</div>';
+                    return;
+                }
+
+                if (comentarios.length === 0) {
+                    container.innerHTML =
+                        '<div style="padding:10px 0; color:#777;">Ainda não há comentários nesta necessidade.</div>';
+                    return;
+                }
+
+                container.innerHTML = comentarios.map(c => {
+
+                    const souEu =
+                        utilizadorAtual &&
+                        utilizadorAtual.id === c.utilizador_id;
+
+                    const souAdministrador =
+                        utilizadorAtual &&
+                        utilizadorAtual.ehAdministrador;
+
+                    return `
+                        <div style="
+                            padding:12px;
+                            margin-bottom:10px;
+                            border:1px solid #e0e0e0;
+                            border-radius:10px;
+                            background:#fafafa;
+                        ">
+
+                            <div style="
+                                display:flex;
+                                justify-content:space-between;
+                                gap:10px;
+                                margin-bottom:5px;
+                            ">
+                                <strong>
+                                    👤 ${c.nome || 'Utilizador'}
+                                </strong>
+
+                                <small style="color:#777;">
+                                    ${formatarDataPublicacao(c.data)}
+                                </small>
+                            </div>
+
+                            <div style="
+                                white-space:pre-wrap;
+                                word-break:break-word;
+                            ">
+                                ${c.comentario}
+                            </div>
+
+                            ${
+                                souEu || souAdministrador
+                                ? `
+                                    <button
+                                        type="button"
+                                        onclick="eliminarComentarioNecessidade(${c.id}, ${necessidadeId})"
+                                        style="
+                                            margin-top:8px;
+                                            border:0;
+                                            background:none;
+                                            color:#c62828;
+                                            cursor:pointer;
+                                            padding:4px 0;
+                                            font-weight:700;
+                                        ">
+                                        🗑️ Eliminar
+                                    </button>
+                                  `
+                                : ''
+                            }
+
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error(
+                    'ERRO AO CARREGAR COMENTÁRIOS DA NECESSIDADE:',
+                    error
+                );
+
+                container.innerHTML =
+                    '<div style="color:#c62828;">Erro ao carregar comentários.</div>';
+            }
+        }
+
+
+        async function publicarComentarioNecessidade(necessidadeId) {
+
+            if (!utilizadorAtual || !utilizadorAtual.ownerToken) {
+                alert(
+                    'Precisas de iniciar sessão para comentar.'
+                );
+                return;
+            }
+
+            const campo =
+                document.getElementById('novoComentarioNecessidade');
+
+            if (!campo) return;
+
+            const comentario =
+                campo.value.trim();
+
+            if (!comentario) {
+                alert('Escreva um comentário.');
+                campo.focus();
+                return;
+            }
+
+            if (comentario.length > 500) {
+                alert(
+                    'O comentário não pode ultrapassar 500 caracteres.'
+                );
+                return;
+            }
+
+            try {
+                const res = await fetch(
+                    `${API}/precisos/${necessidadeId}/comentarios`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-owner-token':
+                                utilizadorAtual.ownerToken
+                        },
+                        body: JSON.stringify({
+                            comentario
+                        })
+                    }
+                );
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    alert(
+                        dados.erro ||
+                        'Não foi possível publicar o comentário.'
+                    );
+                    return;
+                }
+
+                campo.value = '';
+
+                await carregarComentariosNecessidade(
+                    necessidadeId
+                );
+
+            } catch (error) {
+                console.error(
+                    'ERRO AO PUBLICAR COMENTÁRIO DA NECESSIDADE:',
+                    error
+                );
+
+                alert(
+                    'Não foi possível comunicar com o servidor.'
+                );
+            }
+        }
+
+
+        async function eliminarComentarioNecessidade(
+            comentarioId,
+            necessidadeId
+        ) {
+
+            const confirmar = confirm(
+                'Tens a certeza que queres eliminar este comentário?'
+            );
+
+            if (!confirmar) return;
+
+            if (!utilizadorAtual || !utilizadorAtual.ownerToken) {
+                alert(
+                    'Precisas de iniciar sessão.'
+                );
+                return;
+            }
+
+            try {
+                const res = await fetch(
+                    `${API}/comentarios-precisos/${comentarioId}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            'x-owner-token':
+                                utilizadorAtual.ownerToken
+                        }
+                    }
+                );
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    alert(
+                        dados.erro ||
+                        'Não foi possível eliminar o comentário.'
+                    );
+                    return;
+                }
+
+                await carregarComentariosNecessidade(
+                    necessidadeId
+                );
+
+            } catch (error) {
+                console.error(
+                    'ERRO AO ELIMINAR COMENTÁRIO DA NECESSIDADE:',
+                    error
+                );
+
+                alert(
+                    'Não foi possível comunicar com o servidor.'
+                );
+            }
+        }
+
+
         function abrirDetalhesNecessidade(index) {
             const p = window.precisosAtuais?.[index];
 
@@ -1995,6 +2546,82 @@ button.btn-blue {
                             Necessidade publicada pelo comprador na plataforma.
                         </div>
 
+                        <!-- COMENTÁRIOS DA NECESSIDADE -->
+                        <div style="
+                            margin-top:20px;
+                            padding-top:16px;
+                            border-top:1px solid #e0e0e0;
+                        ">
+
+                            <h3 style="margin:0 0 12px;">
+                                💬 Comentários
+                            </h3>
+
+                            ${
+                                utilizadorAtual &&
+                                utilizadorAtual.ownerToken
+                                ? `
+                                    <div style="margin-bottom:16px;">
+
+                                        <textarea
+                                            id="novoComentarioNecessidade"
+                                            maxlength="500"
+                                            placeholder="Escreva um comentário sobre esta necessidade..."
+                                            style="
+                                                width:100%;
+                                                min-height:90px;
+                                                padding:12px;
+                                                box-sizing:border-box;
+                                                border:1px solid #ccc;
+                                                border-radius:10px;
+                                                resize:vertical;
+                                                font-family:inherit;
+                                            "
+                                        ></textarea>
+
+                                        <button
+                                            type="button"
+                                            onclick="publicarComentarioNecessidade(${p.id})"
+                                            style="
+                                                width:100%;
+                                                margin-top:8px;
+                                                padding:12px;
+                                                border:0;
+                                                border-radius:10px;
+                                                background:#1976d2;
+                                                color:#fff;
+                                                font-weight:700;
+                                                cursor:pointer;
+                                            ">
+                                            💬 Publicar comentário
+                                        </button>
+
+                                    </div>
+                                  `
+                                : `
+                                    <div style="
+                                        padding:12px;
+                                        margin-bottom:14px;
+                                        background:#f5f5f5;
+                                        border-radius:10px;
+                                        color:#666;
+                                    ">
+                                        🔐 Inicie sessão para deixar um comentário.
+                                    </div>
+                                  `
+                            }
+
+                            <div id="comentariosNecessidade">
+                                <div style="
+                                    padding:10px 0;
+                                    color:#777;
+                                ">
+                                    A carregar comentários...
+                                </div>
+                            </div>
+
+                        </div>
+
                     </div>
                 </div>
             `;
@@ -2008,6 +2635,8 @@ button.btn-blue {
             };
 
             document.body.style.overflow = 'hidden';
+
+            carregarComentariosNecessidade(p.id);
         }
 
         function fecharDetalhesNecessidade() {

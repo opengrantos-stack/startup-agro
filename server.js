@@ -173,6 +173,24 @@ async function criarTabelas() {
             contacto TEXT NOT NULL,
             data TIMESTAMPTZ DEFAULT NOW()
         );
+
+        CREATE TABLE IF NOT EXISTS comentarios (
+            id SERIAL PRIMARY KEY,
+            produto_id INTEGER NOT NULL,
+            utilizador_id INTEGER NOT NULL,
+            nome TEXT NOT NULL,
+            comentario TEXT NOT NULL,
+            data TIMESTAMPTZ DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS comentarios_precisos (
+            id SERIAL PRIMARY KEY,
+            preciso_id INTEGER NOT NULL,
+            utilizador_id INTEGER NOT NULL,
+            nome TEXT NOT NULL,
+            comentario TEXT NOT NULL,
+            data TIMESTAMPTZ DEFAULT NOW()
+        );
     `);
 
     await pool.query(`
@@ -426,6 +444,413 @@ app.post('/login', async (req, res) => {
 
         res.status(500).json({
             erro: 'Erro ao efetuar login.'
+        });
+    }
+});
+
+
+
+// ==============================
+// COMENTÁRIOS DOS PRODUTOS
+// ==============================
+
+// Carregar comentários de um produto.
+app.get('/produtos/:id/comentarios', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const resultado = await pool.query(
+            `SELECT id, produto_id, utilizador_id, nome, comentario, data
+             FROM comentarios
+             WHERE produto_id = $1
+             ORDER BY data ASC, id ASC`,
+            [id]
+        );
+
+        res.json(resultado.rows);
+
+    } catch (error) {
+        console.error(
+            'ERRO AO CARREGAR COMENTÁRIOS:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao carregar comentários.'
+        });
+    }
+});
+
+
+// Publicar comentário num produto.
+app.post('/produtos/:id/comentarios', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { comentario } = req.body;
+
+        const ownerToken =
+            req.headers['x-owner-token'];
+
+        if (!ownerToken) {
+            return res.status(401).json({
+                erro: 'Precisas de iniciar sessão para comentar.'
+            });
+        }
+
+        const texto = String(comentario || '').trim();
+
+        if (!texto) {
+            return res.status(400).json({
+                erro: 'Escreva um comentário.'
+            });
+        }
+
+        if (texto.length > 500) {
+            return res.status(400).json({
+                erro: 'O comentário não pode ultrapassar 500 caracteres.'
+            });
+        }
+
+        // Confirmar o utilizador através do owner_token.
+        const utilizador = await pool.query(
+            `SELECT id, nome
+             FROM utilizadores
+             WHERE owner_token = $1`,
+            [ownerToken]
+        );
+
+        if (utilizador.rowCount === 0) {
+            return res.status(401).json({
+                erro: 'Utilizador não autenticado.'
+            });
+        }
+
+        // Confirmar que o produto existe.
+        const produto = await pool.query(
+            `SELECT id
+             FROM produtos
+             WHERE id = $1`,
+            [id]
+        );
+
+        if (produto.rowCount === 0) {
+            return res.status(404).json({
+                erro: 'Produto não encontrado.'
+            });
+        }
+
+        const utilizadorDados = utilizador.rows[0];
+
+        const resultado = await pool.query(
+            `INSERT INTO comentarios
+             (produto_id, utilizador_id, nome, comentario)
+             VALUES ($1, $2, $3, $4)
+             RETURNING id, produto_id, utilizador_id,
+                       nome, comentario, data`,
+            [
+                id,
+                utilizadorDados.id,
+                utilizadorDados.nome,
+                texto
+            ]
+        );
+
+        res.status(201).json({
+            mensagem: 'Comentário publicado com sucesso.',
+            comentario: resultado.rows[0]
+        });
+
+    } catch (error) {
+        console.error(
+            'ERRO AO PUBLICAR COMENTÁRIO:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao publicar comentário.'
+        });
+    }
+});
+
+
+// Eliminar comentário.
+
+// ==============================
+// COMENTÁRIOS DAS NECESSIDADES
+// ==============================
+
+// Carregar comentários de uma necessidade.
+app.get('/precisos/:id/comentarios', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const resultado = await pool.query(
+            `SELECT id, preciso_id, utilizador_id, nome, comentario, data
+             FROM comentarios_precisos
+             WHERE preciso_id = $1
+             ORDER BY data ASC, id ASC`,
+            [id]
+        );
+
+        res.json(resultado.rows);
+
+    } catch (error) {
+        console.error(
+            'ERRO AO CARREGAR COMENTÁRIOS DA NECESSIDADE:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao carregar comentários.'
+        });
+    }
+});
+
+
+// Publicar comentário numa necessidade.
+app.post('/precisos/:id/comentarios', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { comentario } = req.body;
+
+        const ownerToken =
+            req.headers['x-owner-token'];
+
+        if (!ownerToken) {
+            return res.status(401).json({
+                erro: 'Precisas de iniciar sessão para comentar.'
+            });
+        }
+
+        const texto = String(comentario || '').trim();
+
+        if (!texto) {
+            return res.status(400).json({
+                erro: 'Escreva um comentário.'
+            });
+        }
+
+        if (texto.length > 500) {
+            return res.status(400).json({
+                erro: 'O comentário não pode ultrapassar 500 caracteres.'
+            });
+        }
+
+        const utilizador = await pool.query(
+            `SELECT id, nome
+             FROM utilizadores
+             WHERE owner_token = $1`,
+            [ownerToken]
+        );
+
+        if (utilizador.rowCount === 0) {
+            return res.status(401).json({
+                erro: 'Utilizador não autenticado.'
+            });
+        }
+
+        const necessidade = await pool.query(
+            `SELECT id
+             FROM precisos
+             WHERE id = $1`,
+            [id]
+        );
+
+        if (necessidade.rowCount === 0) {
+            return res.status(404).json({
+                erro: 'Necessidade não encontrada.'
+            });
+        }
+
+        const utilizadorDados = utilizador.rows[0];
+
+        const resultado = await pool.query(
+            `INSERT INTO comentarios_precisos
+             (preciso_id, utilizador_id, nome, comentario)
+             VALUES ($1, $2, $3, $4)
+             RETURNING id, preciso_id, utilizador_id,
+                       nome, comentario, data`,
+            [
+                id,
+                utilizadorDados.id,
+                utilizadorDados.nome,
+                texto
+            ]
+        );
+
+        res.status(201).json({
+            mensagem: 'Comentário publicado com sucesso.',
+            comentario: resultado.rows[0]
+        });
+
+    } catch (error) {
+        console.error(
+            'ERRO AO PUBLICAR COMENTÁRIO DA NECESSIDADE:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao publicar comentário.'
+        });
+    }
+});
+
+
+// Eliminar comentário de uma necessidade.
+app.delete('/comentarios-precisos/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const ownerToken =
+            req.headers['x-owner-token'];
+
+        if (!ownerToken) {
+            return res.status(401).json({
+                erro: 'Autorização necessária.'
+            });
+        }
+
+        const utilizador = await pool.query(
+            `SELECT id
+             FROM utilizadores
+             WHERE owner_token = $1`,
+            [ownerToken]
+        );
+
+        if (utilizador.rowCount === 0) {
+            return res.status(401).json({
+                erro: 'Utilizador não autenticado.'
+            });
+        }
+
+        const utilizadorId = utilizador.rows[0].id;
+
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerToken);
+
+        let resultado;
+
+        if (ehAdministrador) {
+
+            resultado = await pool.query(
+                `DELETE FROM comentarios_precisos
+                 WHERE id = $1
+                 RETURNING id`,
+                [id]
+            );
+
+        } else {
+
+            resultado = await pool.query(
+                `DELETE FROM comentarios_precisos
+                 WHERE id = $1
+                   AND utilizador_id = $2
+                 RETURNING id`,
+                [id, utilizadorId]
+            );
+        }
+
+        if (resultado.rowCount === 0) {
+            return res.status(403).json({
+                erro: 'Não tens autorização para eliminar este comentário.'
+            });
+        }
+
+        res.json({
+            mensagem: ehAdministrador
+                ? 'Comentário eliminado pelo administrador.'
+                : 'Comentário eliminado com sucesso.'
+        });
+
+    } catch (error) {
+        console.error(
+            'ERRO AO ELIMINAR COMENTÁRIO DA NECESSIDADE:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao eliminar comentário.'
+        });
+    }
+});
+
+
+app.delete('/comentarios/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const ownerToken =
+            req.headers['x-owner-token'];
+
+        if (!ownerToken) {
+            return res.status(401).json({
+                erro: 'Autorização necessária.'
+            });
+        }
+
+        // Descobrir a conta autenticada.
+        const utilizador = await pool.query(
+            `SELECT id
+             FROM utilizadores
+             WHERE owner_token = $1`,
+            [ownerToken]
+        );
+
+        if (utilizador.rowCount === 0) {
+            return res.status(401).json({
+                erro: 'Utilizador não autenticado.'
+            });
+        }
+
+        const utilizadorId = utilizador.rows[0].id;
+
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerToken);
+
+        let resultado;
+
+        if (ehAdministrador) {
+
+            // Administrador pode moderar qualquer comentário.
+            resultado = await pool.query(
+                `DELETE FROM comentarios
+                 WHERE id = $1
+                 RETURNING id`,
+                [id]
+            );
+
+        } else {
+
+            // Utilizador normal só pode apagar o próprio comentário.
+            resultado = await pool.query(
+                `DELETE FROM comentarios
+                 WHERE id = $1
+                   AND utilizador_id = $2
+                 RETURNING id`,
+                [id, utilizadorId]
+            );
+        }
+
+        if (resultado.rowCount === 0) {
+            return res.status(403).json({
+                erro: 'Não tens autorização para eliminar este comentário.'
+            });
+        }
+
+        res.json({
+            mensagem: ehAdministrador
+                ? 'Comentário eliminado pelo administrador.'
+                : 'Comentário eliminado com sucesso.'
+        });
+
+    } catch (error) {
+        console.error(
+            'ERRO AO ELIMINAR COMENTÁRIO:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao eliminar comentário.'
         });
     }
 });
