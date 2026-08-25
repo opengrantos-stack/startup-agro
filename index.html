@@ -1396,50 +1396,63 @@ body.service-modal-open {
                 </div>
 
                 <!-- ==============================
-                     FEED
+                     FEED STARTUP-AGRO
                      ============================== -->
 
-                <section
-                    id="painelFeedStartupAgro"
-                    style="
-                        width:100%;
-                        margin:14px 0 0;
-                    ">
+                <button
+                    type="button"
+                    id="toggleFeedStartupAgro"
+                    class="service-button"
+                    onclick="abrirJanelaServico('janelaFeedStartupAgro')"
+                    style="margin-top:8px;">
+                    <span>📰 Feed Startup-Agro</span>
+                    <span>›</span>
+                </button>
 
-                    <div style="
-                        border-top:1px solid #e0e0e0;
-                        padding-top:12px;
-                        margin-bottom:8px;
-                        font-size:15px;
-                        font-weight:800;
-                        color:#2e7d32;
-                    ">
-                        📰 Feed Startup-Agro
-                    </div>
+                <div
+                    id="janelaFeedStartupAgro"
+                    class="service-modal hidden">
 
-                    <div
-                        id="listaFeedStartupAgro"
-                        style="
-                            display:flex;
-                            flex-direction:column;
-                            gap:8px;
-                        ">
+                    <div class="service-modal-box">
 
-                        <div style="
-                            padding:10px;
-                            border:1px solid #e0e0e0;
-                            border-radius:8px;
-                            background:#fff;
-                            color:#777;
-                            font-size:12px;
-                            text-align:center;
-                        ">
-                            📰 A carregar publicações...
+                        <div class="service-modal-header">
+                            <strong>📰 Feed Startup-Agro</strong>
+
+                            <button
+                                type="button"
+                                class="service-close"
+                                onclick="fecharJanelaServico('janelaFeedStartupAgro')">
+                                ×
+                            </button>
                         </div>
 
-                    </div>
+                        <div class="service-modal-body">
 
-                </section>
+                            <div
+                                id="listaFeedStartupAgro"
+                                style="
+                                    display:flex;
+                                    flex-direction:column;
+                                    gap:8px;
+                                ">
+
+                                <div style="
+                                    padding:10px;
+                                    border:1px solid #e0e0e0;
+                                    border-radius:8px;
+                                    background:#fff;
+                                    color:#777;
+                                    font-size:12px;
+                                    text-align:center;
+                                ">
+                                    📰 A carregar publicações...
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
 
                 <!-- PAINÉIS MANTIDOS PARA COMPATIBILIDADE -->
                 <div id="painelAgricultor" class="hidden"></div>
@@ -1978,31 +1991,7 @@ body.service-modal-open {
         // ============================================================
 
         function alternarFeedStartupAgro() {
-
-            const conteudo =
-                document.getElementById('conteudoFeedStartupAgro');
-
-            const seta =
-                document.getElementById('setaFeedStartupAgro');
-
-            if (!conteudo) return;
-
-            conteudo.classList.toggle('hidden');
-
-            if (conteudo.classList.contains('hidden')) {
-
-                if (seta) {
-                    seta.textContent = '⌄';
-                }
-
-            } else {
-
-                if (seta) {
-                    seta.textContent = '⌃';
-                }
-
-                carregarFeedStartupAgro();
-            }
+            abrirJanelaServico('janelaFeedStartupAgro');
         }
 
 
