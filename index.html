@@ -630,7 +630,7 @@ button.btn-blue {
             <!-- CADASTRO -->
             <div id="formularioCadastro" class="hidden">
                 <p style="font-size:14px; color:#666;">
-                    Crie a sua conta para publicar produtos ou necessidades.
+                    Crie uma única conta para utilizar os serviços de vendedores e compradores.
                 </p>
 
                 <form onsubmit="criarConta(event)">
@@ -649,11 +649,7 @@ button.btn-blue {
                         required
                     >
 
-                    <select id="cadastroTipo" required>
-                        <option value="">Selecione o Perfil</option>
-                        <option value="agricultor">🌾 Sou Agricultor (Vendedor)</option>
-                        <option value="comprador">🛒 Sou Comprador (Cliente)</option>
-                    </select>
+                    
 
                     <input
                         type="password"
@@ -676,25 +672,313 @@ button.btn-blue {
 
         <!-- APLICAÇÃO PRINCIPAL -->
         <div id="seccaoApp" class="hidden">
-            <div class="user-badge">
-                <div>👤 <span id="spanUtilizador"></span> (<strong id="spanTipoPerfil"></strong>)</div>
-                <button onclick="terminarSessao()" style="width: auto; padding: 6px 12px; margin: 0; font-size: 12px; background: #d32f2f;">Sair</button>
+
+            <!-- PAINEL DA CONTA -->
+            <div id="painelConta" style="
+                margin:15px 0;
+                padding:14px;
+                border:1px solid #e0e0e0;
+                border-radius:12px;
+                background:#fff;
+            ">
+
+                <!-- CABEÇALHO DA CONTA -->
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:space-between;
+                    gap:10px;
+                    margin-bottom:12px;
+                ">
+
+                    <div style="
+                        font-size:15px;
+                        font-weight:700;
+                        color:#333;
+                        overflow:hidden;
+                        text-overflow:ellipsis;
+                        white-space:nowrap;
+                    ">
+                        👤 <span id="spanUtilizador"></span>
+                    </div>
+
+                    <button
+                        type="button"
+                        onclick="terminarSessao()"
+                        style="
+                            width:auto;
+                            margin:0;
+                            padding:5px 10px;
+                            border:0;
+                            border-radius:7px;
+                            background:#d32f2f;
+                            color:#fff;
+                            font-size:11px;
+                            font-weight:700;
+                            cursor:pointer;
+                        ">
+                        Sair
+                    </button>
+
+                </div>
+
+                <div style="
+                    font-size:12px;
+                    color:#777;
+                    margin-bottom:10px;
+                ">
+                    Escolha como deseja utilizar a Startup-Agro:
+                </div>
+
+                <div style="
+                    display:grid;
+                    grid-template-columns:1fr 1fr;
+                    gap:10px;
+                ">
+
+                    <button
+                        type="button"
+                        onclick="selecionarModoConta('vendedor')"
+                        style="
+                            padding:12px 8px;
+                            border:1px solid #2e7d32;
+                            border-radius:9px;
+                            background:#fff;
+                            color:#2e7d32;
+                            font-weight:700;
+                            cursor:pointer;
+                        ">
+                        🌾 Vendedores
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="selecionarModoConta('comprador')"
+                        style="
+                            padding:12px 8px;
+                            border:1px solid #1976d2;
+                            border-radius:9px;
+                            background:#fff;
+                            color:#1976d2;
+                            font-weight:700;
+                            cursor:pointer;
+                        ">
+                        🛒 Compradores
+                    </button>
+
+                </div>
+
+                <div
+                    id="modoContaAtual"
+                    style="
+                        margin-top:4px;
+                        text-align:center;
+                        font-size:12px;
+                        color:#777;
+                    ">
+                    Selecione um serviço para continuar.
+                </div>
+
+
+
+                <button
+                    type="button"
+
+                <!-- ==================================================
+                     FEED STARTUP-AGRO
+                     Funcionalidade independente de Mercado,
+                     Produtos e Mural das Necessidades.
+                     ================================================== -->
+
+                <section
+                    id="painelFeedStartupAgro"
+                    style="
+                        width:100%;
+                        margin:4px 0 6px 0;
+                    "
+                >
+
+                    <button
+                        type="button"
+                        id="toggleFeedStartupAgro"
+                        onclick="alternarFeedStartupAgro()"
+                        style="
+                            width:100%;
+                            min-height:34px;
+                            padding:6px 10px;
+                            margin:0 0 4px 0;
+                            border:1px solid #2e7d32;
+                            border-radius:8px;
+                            background:#fff;
+                            color:#2e7d32;
+                            font-weight:700;
+                            font-size:13px;
+                            line-height:1.2;
+                            cursor:pointer;
+                        "
+                    >
+                        📰 Feed Startup-Agro
+                        <span id="setaFeedStartupAgro">⌄</span>
+                    </button>
+
+                    <div
+                        id="conteudoFeedStartupAgro"
+                        class="hidden"
+                        style="
+                            width:100%;
+                        "
+                    >
+
+                        <div
+                            id="listaFeedStartupAgro"
+                            style="
+                                display:flex;
+                                flex-direction:column;
+                                gap:8px;
+                            "
+                        >
+                            <div
+                                style="
+                                    padding:10px;
+                                    border:1px solid #e0e0e0;
+                                    border-radius:8px;
+                                    background:#fff;
+                                    color:#777;
+                                    font-size:12px;
+                                    text-align:center;
+                                "
+                            >
+                                📰 A carregar publicações...
+                            </div>
+                        </div>
+
+                    </div>
+
+                </section>
+
+                    id="togglePublicarProduto"
+                    class="publish-toggle"
+                    onclick="alternarPublicacaoProduto()"
+                    style="
+                        width:100%;
+                        padding:6px 10px;
+                        min-height:34px;
+                        margin:4px 0 4px 0;
+                        border:1px solid #2e7d32;
+                        border-radius:8px;
+                        background:#fff;
+                        color:#2e7d32;
+                        font-weight:700;
+                        font-size:13px;
+                        line-height:1.2;
+                        cursor:pointer;
+                    ">
+                    <span>🌾 Publicar Produto</span>
+                    <span class="publish-arrow">⌄</span>
+                </button><!-- MERCADO -->
+                <button
+                    type="button"
+                    id="toggleMercadoPrincipal"
+                    onclick="alternarMercadoPrincipal()"
+                    style="
+                        width:100%;
+                        padding:6px 10px;
+                        min-height:34px;
+                        margin:4px 0 4px 0;
+                        border:1px solid #2e7d32;
+                        border-radius:8px;
+                        background:#fff;
+                        color:#2e7d32;
+                        font-weight:700;
+                        font-size:13px;
+                        line-height:1.2;
+                        cursor:pointer;
+                    ">
+                    🛒 Produtos Disponíveis no Mercado
+                    <span id="setaMercadoPrincipal">⌄</span>
+                </button>
+
+                <div
+                    id="conteudoMercado"
+                    class="hidden"
+                    style="margin:0 0 6px 0;">
+
+                    <input
+                        type="text"
+                        id="filtroProduto"
+                        placeholder="🔎 Pesquisar produto..."
+                        style="margin-top:4px;">
+
+                    <select
+                        id="filtroProvincia"
+                        onchange="carregarProdutos()">
+
+                        <option value="">Todas as Províncias</option>
+                        <option value="Bengo">Bengo</option>
+                        <option value="Benguela">Benguela</option>
+                        <option value="Bié">Bié</option>
+                        <option value="Cabinda">Cabinda</option>
+                        <option value="Cuando">Cuando</option>
+                        <option value="Cuanza Norte">Cuanza Norte</option>
+                        <option value="Cuanza Sul">Cuanza Sul</option>
+                        <option value="Cubango">Cubango</option>
+                        <option value="Cunene">Cunene</option>
+                        <option value="Huambo">Huambo</option>
+                        <option value="Huíla">Huíla</option>
+                        <option value="Icolo e Bengo">Icolo e Bengo</option>
+                        <option value="Luanda">Luanda</option>
+                        <option value="Lunda Norte">Lunda Norte</option>
+                        <option value="Lunda Sul">Lunda Sul</option>
+                        <option value="Malanje">Malanje</option>
+                        <option value="Moxico">Moxico</option>
+                        <option value="Moxico Leste">Moxico Leste</option>
+                        <option value="Namibe">Namibe</option>
+                        <option value="Uíge">Uíge</option>
+                        <option value="Zaire">Zaire</option>
+
+                    </select>
+
+                    <button
+                        type="button"
+                        onclick="carregarProdutos()"
+                        style="
+                            width:100%;
+                            padding:6px 10px;
+                            min-height:34px;
+                            margin:4px 0 6px 0;
+                            border:1px solid #2e7d32;
+                            border-radius:8px;
+                            background:#2e7d32;
+                            color:#fff;
+                            font-weight:700;
+                            font-size:13px;
+                            cursor:pointer;
+                        ">
+                        Filtrar Mercado
+                    </button>
+
+                    <div
+                        id="listaProdutos"
+                        style="margin-top:6px;">
+
+                        <p style="
+                            text-align:center;
+                            color:var(--text-muted);
+                        ">
+                            A carregar...
+                        </p>
+
+                    </div>
+
+                </div>
+
+
             </div>
 
             <!-- PAINEL DO AGRICULTOR -->
-            <div id="painelAgricultor" class="card-section hidden">
+            <div id="painelAgricultor" class="card-section hidden" style="margin-top:4px;"></div></div>
 
-                <button type="button"
-                        id="togglePublicarProduto"
-                        class="publish-toggle"
-                        onclick="alternarPublicacaoProduto()">
-
-                    <span>🌾 Publicar Produto com Foto</span>
-                    <span class="publish-arrow">⌄</span>
-
-                </button>
-
-                <div id="formPublicarProduto" class="publish-form-wrap">
+            </div><div id="formPublicarProduto" class="publish-form-wrap">
 
                     <form id="formProduto" onsubmit="registarProduto(event)">
                         <input type="hidden" id="produtoEditandoId" value="">
@@ -782,15 +1066,17 @@ button.btn-blue {
             </div>
 
             <!-- PAINEL DO COMPRADOR -->
-            <div id="painelComprador" class="card-section blue hidden">
+            <div id="painelComprador" class="card-section blue hidden" style="margin-top:4px;">
 
                 <button
                     type="button"
                     id="togglePublicarNecessidade"
                     class="publish-toggle"
-                    onclick="alternarPublicacaoNecessidade()">
+                    style="display:none;"
+                    onclick="alternarPublicacaoNecessidade()"
+                    style="padding:5px 10px; min-height:34px; margin-top:0; margin-bottom:4px;">
 
-                    <span id="tituloBotaoNecessidade">📢 Publicar Necessidade de Compra</span>
+                    <span id="tituloBotaoNecessidade">🛒 Publicar Necessidade</span>
                     <span class="publish-arrow">⌄</span>
 
                 </button>
@@ -859,7 +1145,7 @@ button.btn-blue {
                             type="button"
                             id="btnCancelarEdicaoNecessidade"
                             onclick="cancelarEdicaoNecessidade()"
-                            style="display:none; width:100%; margin-top:10px; padding:13px; border:1px solid #777; border-radius:10px; background:#fff; color:#555; font-weight:700; cursor:pointer;">
+                            style="display:none; width:100%; margin-top:10px; padding:6px 10px; border:1px solid #777; border-radius:10px; background:#fff; color:#555; font-weight:700; cursor:pointer;">
                             Cancelar edição
                         </button>
 
@@ -868,44 +1154,20 @@ button.btn-blue {
                 </div>
             </div>
 
-            <!-- MERCADO -->
-            <div class="card-section">
-                <h2>🛒 Produtos Disponíveis no Mercado</h2>
-                <input type="text" id="filtroProduto" placeholder="Pesquisar produto...">
-                <select id="filtroProvincia" onchange="carregarProdutos()">
-                    <option value="">Todas as Províncias</option>
-                    <option value="Bengo">Bengo</option>
-                    <option value="Benguela">Benguela</option>
-                    <option value="Bié">Bié</option>
-                    <option value="Cabinda">Cabinda</option>
-                    <option value="Cuando">Cuando</option>
-                    <option value="Cuanza Norte">Cuanza Norte</option>
-                    <option value="Cuanza Sul">Cuanza Sul</option>
-                    <option value="Cubango">Cubango</option>
-                    <option value="Cunene">Cunene</option>
-                    <option value="Huambo">Huambo</option>
-                    <option value="Huíla">Huíla</option>
-                    <option value="Icolo e Bengo">Icolo e Bengo</option>
-                    <option value="Luanda">Luanda</option>
-                    <option value="Lunda Norte">Lunda Norte</option>
-                    <option value="Lunda Sul">Lunda Sul</option>
-                    <option value="Malanje">Malanje</option>
-                    <option value="Moxico">Moxico</option>
-                    <option value="Moxico Leste">Moxico Leste</option>
-                    <option value="Namibe">Namibe</option>
-                    <option value="Uíge">Uíge</option>
-                    <option value="Zaire">Zaire</option>
-                    </select>
-                <button onclick="carregarProdutos()">Filtrar Mercado</button>
-                <div id="listaProdutos" style="margin-top: 15px;">
-                    <p style="text-align: center; color: var(--text-muted);">A carregar...</p>
-                </div>
-            </div>
-
             <!-- MURAL -->
             <div class="card-section blue">
-                <h2>📋 Mural de Necessidades</h2>
-                <select id="filtroProvinciaPreciso" onchange="carregarPrecisos()">
+                <h2 style="
+                    margin:0 0 6px 0;
+                    font-size:16px;
+                    line-height:1.2;
+                ">📋 Mural de Necessidades</h2>
+                <select id="filtroProvinciaPreciso"
+                        style="
+                            width:100%;
+                            padding:6px 10px;
+                            min-height:34px;
+                            margin:0 0 4px 0;
+                        " onchange="carregarPrecisos()">
                     <option value="">Todas as Províncias</option>
                     <option value="Bengo">Bengo</option>
                     <option value="Benguela">Benguela</option>
@@ -1056,13 +1318,12 @@ button.btn-blue {
             const telefone =
                 document.getElementById('cadastroTelefone').value.trim();
 
-            const tipo =
-                document.getElementById('cadastroTipo').value;
+            const tipo = 'utilizador';
 
             const pin =
                 document.getElementById('cadastroPin').value.trim();
 
-            if (!nome || !telefone || !tipo || !pin) {
+            if (!nome || !telefone || !pin) {
                 mostrarMensagemAutenticacao(
                     'Preencha todos os campos.',
                     true
@@ -1091,7 +1352,7 @@ button.btn-blue {
                     body: JSON.stringify({
                         nome,
                         telefone,
-                        tipo,
+                        tipo: 'utilizador',
                         pin
                     })
                 });
@@ -1133,58 +1394,201 @@ button.btn-blue {
             }
         }
 
+        function alternarMercado() {
+
+            const conteudo =
+                document.getElementById('conteudoMercado');
+
+            const seta =
+                document.getElementById('setaMercado');
+
+            if (!conteudo) {
+                return;
+            }
+
+            if (conteudo.classList.contains('hidden')) {
+
+                conteudo.classList.remove('hidden');
+
+                if (seta) {
+                    seta.textContent = '⌃';
+                }
+
+            } else {
+
+                conteudo.classList.add('hidden');
+
+                if (seta) {
+                    seta.textContent = '⌄';
+                }
+            }
+        }
+
+
+        function selecionarModoConta(modo) {
+
+            if (!utilizadorAtual) {
+                return;
+            }
+
+            if (modo !== 'vendedor' && modo !== 'comprador') {
+                return;
+            }
+
+            // Guardar o serviço escolhido.
+            utilizadorAtual.modoAtivo = modo;
+
+            localStorage.setItem(
+                'agro_modo_conta',
+                modo
+            );
+
+            localStorage.setItem(
+                'agro_user',
+                JSON.stringify(utilizadorAtual)
+            );
+
+            aplicarModoConta(modo);
+            atualizarPainelConta();
+
+            console.log(
+                'Modo da conta selecionado:',
+                modo
+            );
+        }
+
+
+        function aplicarModoConta(modo) {
+
+            const painelVendedor =
+                document.getElementById('painelAgricultor');
+
+            const painelComprador =
+                document.getElementById('painelComprador');
+
+            if (!painelVendedor || !painelComprador) {
+                return;
+            }
+
+            // Primeiro esconder os dois.
+            painelVendedor.classList.add('hidden');
+            painelComprador.classList.add('hidden');if (modo === 'vendedor') {
+
+                painelVendedor.classList.remove('hidden');
+
+            } else if (modo === 'comprador') {
+
+                painelComprador.classList.remove('hidden');
+            }
+
+            console.log(
+                'Serviço ativo:',
+                modo
+            );
+        }
+
+
+        function atualizarPainelConta() {
+
+            const indicador =
+                document.getElementById('modoContaAtual');
+
+            if (!indicador || !utilizadorAtual) {
+                return;
+            }
+
+            const modo =
+                utilizadorAtual.modoAtivo ||
+                localStorage.getItem('agro_modo_conta');
+
+            if (modo === 'vendedor') {
+                indicador.innerHTML =
+                    '<div style="margin-bottom:4px;">🌾 Modo Vendedor selecionado.</div>';
+            } else if (modo === 'comprador') {
+                indicador.innerHTML =
+                    '<div style="margin-bottom:4px;">🛒 Modo Comprador selecionado.</div>' +
+                    '<button type="button" onclick="alternarPublicacaoNecessidade()" style="width:100%; padding:6px 10px; margin:0; border:1px solid #1976d2; border-radius:8px; background:#fff; color:#1976d2; font-weight:700; font-size:13px; cursor:pointer;">🛒 Publicar Necessidade</button>';
+            } else {
+                indicador.textContent =
+                    'Selecione um serviço para continuar.';
+            }
+        }
+
+
         function aplicarSessao() {
+
             const salvo = localStorage.getItem('agro_user');
 
-            if (!salvo) return;
+            if (!salvo) {
+                document.getElementById('seccaoApp')
+                    .classList.add('hidden');
+
+                document.getElementById('seccaoLogin')
+                    .classList.remove('hidden');
+
+                utilizadorAtual = null;
+                return;
+            }
 
             try {
                 utilizadorAtual = JSON.parse(salvo);
             } catch (erro) {
                 console.error(
-                    'ERRO AO LER SESSÃO:',
+                    'ERRO AO RECUPERAR CONTA:',
                     erro
                 );
 
                 localStorage.removeItem('agro_user');
-                utilizadorAtual = null;
-                return;
-            }
+                        localStorage.removeItem('agro_modo_conta');
 
-            if (!utilizadorAtual || !utilizadorAtual.ownerToken) {
-                localStorage.removeItem('agro_user');
-                utilizadorAtual = null;
-                return;
-            }
+                document.getElementById('seccaoApp')
+                    .classList.add('hidden');
 
-            document.getElementById('seccaoLogin').classList.add('hidden');
-            document.getElementById('seccaoApp').classList.remove('hidden');
-
-            document.getElementById('spanUtilizador').textContent =
-                utilizadorAtual.nome;
-
-            document.getElementById('spanTipoPerfil').textContent =
-                utilizadorAtual.tipo === 'agricultor'
-                    ? 'Agricultor'
-                    : 'Comprador';
-
-            if (utilizadorAtual.tipo === 'agricultor') {
-                document.getElementById('painelAgricultor')
+                document.getElementById('seccaoLogin')
                     .classList.remove('hidden');
 
-                document.getElementById('painelComprador')
-                    .classList.add('hidden');
+                utilizadorAtual = null;
+                return;
+            }
+
+            document.getElementById('seccaoLogin')
+                .classList.add('hidden');
+
+            document.getElementById('seccaoApp')
+                .classList.remove('hidden');
+
+            // Mostrar apenas o nome da conta.
+            document.getElementById('spanUtilizador')
+                .textContent = utilizadorAtual.nome;
+
+            // Não existe mais perfil fixo.
+            // O utilizador escolhe Vendedor ou Comprador
+            // através do painel da própria conta.
+
+            const modo =
+                utilizadorAtual.modoAtivo ||
+                localStorage.getItem('agro_modo_conta');
+
+            if (modo === 'vendedor' || modo === 'comprador') {
+
+                aplicarModoConta(modo);
+
             } else {
-                document.getElementById('painelComprador')
-                    .classList.remove('hidden');
 
+                // Nenhum serviço selecionado ainda.
                 document.getElementById('painelAgricultor')
                     .classList.add('hidden');
+
+                document.getElementById('painelComprador')
+                    .classList.add('hidden');
             }
+
+            atualizarPainelConta();
 
             carregarProdutos();
             carregarPrecisos();
         }
+
 
         function terminarSessao() {
             localStorage.removeItem('agro_user');
@@ -1201,7 +1605,7 @@ button.btn-blue {
             document.getElementById('loginPin').value = '';
             document.getElementById('cadastroNome').value = '';
             document.getElementById('cadastroTelefone').value = '';
-            document.getElementById('cadastroTipo').value = '';
+            // A conta já não possui perfil escolhido no cadastro.
             document.getElementById('cadastroPin').value = '';
 
             mostrarMensagemAutenticacao('');
@@ -1319,8 +1723,243 @@ button.btn-blue {
                 minute: '2-digit'
             });
         }
+        // ============================================================
+        // FEED STARTUP-AGRO
+        // Funcionalidade independente
+        // ============================================================
 
-        async function carregarProdutos() {
+        function alternarFeedStartupAgro() {
+
+            const conteudo =
+                document.getElementById('conteudoFeedStartupAgro');
+
+            const seta =
+                document.getElementById('setaFeedStartupAgro');
+
+            if (!conteudo) return;
+
+            conteudo.classList.toggle('hidden');
+
+            if (conteudo.classList.contains('hidden')) {
+
+                if (seta) {
+                    seta.textContent = '⌄';
+                }
+
+            } else {
+
+                if (seta) {
+                    seta.textContent = '⌃';
+                }
+
+                carregarFeedStartupAgro();
+            }
+        }
+
+
+        async function carregarFeedStartupAgro() {
+
+            const container =
+                document.getElementById('listaFeedStartupAgro');
+
+            if (!container) return;
+
+            container.innerHTML = `
+                <div
+                    style="
+                        padding:10px;
+                        border:1px solid #e0e0e0;
+                        border-radius:8px;
+                        background:#fff;
+                        color:#777;
+                        font-size:12px;
+                        text-align:center;
+                    "
+                >
+                    📰 A carregar publicações...
+                </div>
+            `;
+
+            try {
+
+                const res =
+                    await fetch(`${API}/feed-publicacoes`);
+
+                const publicacoes =
+                    await res.json();
+
+                if (!res.ok || !Array.isArray(publicacoes)) {
+                    throw new Error('Erro ao carregar Feed.');
+                }
+
+                if (publicacoes.length === 0) {
+
+                    container.innerHTML = `
+                        <div
+                            style="
+                                padding:10px;
+                                border:1px solid #e0e0e0;
+                                border-radius:8px;
+                                background:#fff;
+                                color:#777;
+                                font-size:12px;
+                                text-align:center;
+                            "
+                        >
+                            📰 Ainda não existem publicações no Feed.
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                container.innerHTML = '';
+
+                publicacoes.forEach((publicacao) => {
+
+                    const titulo =
+                        publicacao.titulo || 'Publicação';
+
+                    const conteudo =
+                        publicacao.conteudo || '';
+
+                    const autor =
+                        publicacao.autorNome ||
+                        'Startup-Agro';
+
+                    const tipo =
+                        publicacao.tipo ||
+                        'informacao';
+
+                    const data =
+                        publicacao.data
+                            ? formatarDataPublicacao(publicacao.data)
+                            : '';
+
+                    const imagem =
+                        publicacao.imagem
+                            ? `
+                                <img
+                                    src="${publicacao.imagem}"
+                                    alt="${titulo}"
+                                    style="
+                                        width:100%;
+                                        max-height:170px;
+                                        object-fit:cover;
+                                        border-radius:7px;
+                                        margin-bottom:7px;
+                                    "
+                                >
+                              `
+                            : '';
+
+                    const destaque =
+                        publicacao.destaque
+                            ? `
+                                <div
+                                    style="
+                                        margin-top:6px;
+                                        font-size:10px;
+                                        font-weight:700;
+                                        color:#2e7d32;
+                                    "
+                                >
+                                    ⭐ Destaque
+                                </div>
+                              `
+                            : '';
+
+                    container.innerHTML += `
+                        <article
+                            style="
+                                width:100%;
+                                box-sizing:border-box;
+                                padding:10px;
+                                border:1px solid #e0e0e0;
+                                border-radius:9px;
+                                background:#fff;
+                            "
+                        >
+
+                            ${imagem}
+
+                            <div
+                                style="
+                                    font-size:14px;
+                                    font-weight:700;
+                                    color:#2e7d32;
+                                    margin-bottom:5px;
+                                "
+                            >
+                                ${titulo}
+                            </div>
+
+                            <div
+                                style="
+                                    font-size:12px;
+                                    color:#555;
+                                    line-height:1.5;
+                                    white-space:pre-wrap;
+                                "
+                            >
+                                ${conteudo}
+                            </div>
+
+                            <div
+                                style="
+                                    display:flex;
+                                    justify-content:space-between;
+                                    gap:6px;
+                                    margin-top:8px;
+                                    padding-top:6px;
+                                    border-top:1px solid #eee;
+                                    font-size:10px;
+                                    color:#888;
+                                "
+                            >
+                                <span>
+                                    ${autor}
+                                </span>
+
+                                <span>
+                                    ${tipo}
+                                    ${data ? ` · ${data}` : ''}
+                                </span>
+                            </div>
+
+                            ${destaque}
+
+                        </article>
+                    `;
+                });
+
+            } catch (error) {
+
+                console.error(
+                    'ERRO AO CARREGAR FEED:',
+                    error
+                );
+
+                container.innerHTML = `
+                    <div
+                        style="
+                            padding:10px;
+                            border:1px solid #ffcdd2;
+                            border-radius:8px;
+                            background:#fff;
+                            color:#c62828;
+                            font-size:12px;
+                            text-align:center;
+                        "
+                    >
+                        Não foi possível carregar o Feed.
+                    </div>
+                `;
+            }
+        }
+
+
+async function carregarProdutos() {
             const produto = document.getElementById('filtroProduto').value;
             const provincia = document.getElementById('filtroProvincia').value;
             let url = `${API}/produtos?`;
@@ -2976,6 +3615,34 @@ button.btn-blue {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("sw.js");
     }
-  </script>
+  
+        function alternarMercadoPrincipal() {
+
+            const conteudo =
+                document.getElementById('conteudoMercado');
+
+            const seta =
+                document.getElementById('setaMercadoPrincipal');
+
+            if (!conteudo || !seta) {
+                return;
+            }
+
+            const fechado =
+                conteudo.classList.contains('hidden');
+
+            if (fechado) {
+
+                conteudo.classList.remove('hidden');
+                seta.textContent = '⌃';
+
+            } else {
+
+                conteudo.classList.add('hidden');
+                seta.textContent = '⌄';
+            }
+        }
+
+</script>
 </body>
 </html>

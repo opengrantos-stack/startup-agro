@@ -212,6 +212,49 @@ async function criarTabelas() {
     `);
 
     console.log('POSTGRES: tabelas verificadas/criadas.');
+
+    // ============================================================
+    // FEED STARTUP-AGRO
+    // Publicações independentes de produtos e necessidades.
+    // ============================================================
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS feed_publicacoes (
+            id SERIAL PRIMARY KEY,
+
+            titulo TEXT NOT NULL,
+            conteudo TEXT NOT NULL,
+
+            tipo TEXT NOT NULL DEFAULT 'informacao',
+
+            autor_nome TEXT,
+            autor_tipo TEXT,
+
+            imagem TEXT,
+
+            produto_id INTEGER,
+            preciso_id INTEGER,
+
+            destaque BOOLEAN DEFAULT FALSE,
+
+            owner_token TEXT,
+
+            data TIMESTAMPTZ DEFAULT NOW()
+        );
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_feed_publicacoes_data
+        ON feed_publicacoes(data DESC);
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_feed_publicacoes_destaque
+        ON feed_publicacoes(destaque);
+    `);
+
+    console.log('POSTGRES: tabela feed_publicacoes verificada/criada.');
+
 }
 
 
@@ -326,9 +369,11 @@ app.post('/utilizadores', async (req, res) => {
             });
         }
 
-        if (!['agricultor', 'comprador'].includes(tipoLimpo)) {
+        // A conta é única.
+        // Vendedor/comprador será escolhido depois do login.
+        if (tipoLimpo !== 'utilizador') {
             return res.status(400).json({
-                erro: 'Tipo de perfil inválido.'
+                erro: 'A conta deve ser criada como utilizador.'
             });
         }
 
@@ -1471,6 +1516,230 @@ app.post('/precisos', async (req, res) => {
         console.error('ERRO AO GUARDAR NECESSIDADE:', error.message);
         res.status(500).json({
             erro: 'Erro ao guardar a necessidade.'
+        });
+    }
+});
+
+
+
+
+// ============================================================
+// FEED STARTUP-AGRO
+// ============================================================
+
+// Listar publicações recentes do Feed
+app.get('/feed-publicacoes', async (req, res) => {
+    try {
+
+        const resultado = await pool.query(`
+            SELECT
+                id,
+                titulo,
+                conteudo,
+                tipo,
+                autor_nome AS "autorNome",
+                autor_tipo AS "autorTipo",
+                imagem,
+                produto_id AS "produtoId",
+                preciso_id AS "precisoId",
+                destaque,
+                data
+            FROM feed_publicacoes
+            ORDER BY destaque DESC, data DESC
+            LIMIT 30
+        `);
+
+        res.json(resultado.rows);
+
+    } catch (error) {
+
+        console.error(
+            'ERRO AO CARREGAR FEED:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao carregar publicações do Feed.'
+        });
+    }
+});
+
+
+// Criar publicação no Feed
+app.post('/feed-publicacoes', async (req, res) => {
+    try {
+
+        const {
+            titulo,
+            conteudo,
+            tipo,
+            autorNome,
+            autorTipo,
+            imagem,
+            produtoId,
+            precisoId,
+            destaque,
+            ownerToken
+        } = req.body;
+
+        if (!titulo || !conteudo) {
+            return res.status(400).json({
+                erro: 'Título e conteúdo são obrigatórios.'
+            });
+        }
+
+        const resultado = await pool.query(`
+            INSERT INTO feed_publicacoes (
+                titulo,
+                conteudo,
+                tipo,
+                autor_nome,
+                autor_tipo,
+                imagem,
+                produto_id,
+                preciso_id,
+                destaque,
+                owner_token
+            )
+            VALUES (
+                $1, $2, $3, $4, $5,
+                $6, $7, $8, $9, $10
+            )
+            RETURNING
+                id,
+                titulo,
+                conteudo,
+                tipo,
+                autor_nome AS "autorNome",
+                autor_tipo AS "autorTipo",
+                imagem,
+                produto_id AS "produtoId",
+                preciso_id AS "precisoId",
+                destaque,
+                data
+        `, [
+            titulo,
+            conteudo,
+            tipo || 'informacao',
+            autorNome || null,
+            autorTipo || null,
+            imagem || null,
+            produtoId || null,
+            precisoId || null,
+            Boolean(destaque),
+            ownerToken || null
+        ]);
+
+        res.status(201).json({
+            mensagem: 'Publicação criada com sucesso.',
+            publicacao: resultado.rows[0]
+        });
+
+    } catch (error) {
+
+        console.error(
+            'ERRO AO CRIAR PUBLICAÇÃO DO FEED:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao criar publicação.'
+        });
+    }
+});
+
+
+// ============================================================
+// PUBLICAÇÃO DO ADMINISTRADOR
+// ============================================================
+
+app.post('/admin/feed-publicacoes', async (req, res) => {
+    try {
+
+        const ownerToken =
+            req.headers['x-owner-token'];
+
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerToken);
+
+        if (!ehAdministrador) {
+            return res.status(403).json({
+                erro: 'Apenas o administrador pode publicar informações.'
+            });
+        }
+
+        const {
+            titulo,
+            conteudo,
+            tipo,
+            imagem,
+            produtoId,
+            precisoId,
+            destaque
+        } = req.body;
+
+        if (!titulo || !conteudo) {
+            return res.status(400).json({
+                erro: 'Título e conteúdo são obrigatórios.'
+            });
+        }
+
+        const resultado = await pool.query(`
+            INSERT INTO feed_publicacoes (
+                titulo,
+                conteudo,
+                tipo,
+                autor_nome,
+                autor_tipo,
+                imagem,
+                produto_id,
+                preciso_id,
+                destaque,
+                owner_token
+            )
+            VALUES (
+                $1, $2, $3,
+                'Startup-Agro',
+                'administrador',
+                $4, $5, $6, $7, $8
+            )
+            RETURNING
+                id,
+                titulo,
+                conteudo,
+                tipo,
+                autor_nome AS "autorNome",
+                autor_tipo AS "autorTipo",
+                imagem,
+                produto_id AS "produtoId",
+                preciso_id AS "precisoId",
+                destaque,
+                data
+        `, [
+            titulo,
+            conteudo,
+            tipo || 'informacao',
+            imagem || null,
+            produtoId || null,
+            precisoId || null,
+            Boolean(destaque),
+            ownerToken
+        ]);
+
+        res.status(201).json({
+            mensagem: 'Publicação do administrador criada com sucesso.',
+            publicacao: resultado.rows[0]
+        });
+
+    } catch (error) {
+
+        console.error(
+            'ERRO AO PUBLICAR NO FEED COMO ADMIN:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao criar publicação do administrador.'
         });
     }
 });
