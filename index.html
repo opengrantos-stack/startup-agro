@@ -1035,6 +1035,64 @@ body.service-modal-open {
                 </div>
 
                 <!-- ==============================
+                     PUBLICAÇÕES DO MERCADO
+                     FORA DO FEED
+                     ============================== -->
+
+                <div
+                    id="publicacoesMercado"
+                    style="
+                        margin-top:12px;
+                        padding:10px;
+                        border:1px solid #e0e0e0;
+                        border-radius:10px;
+                        background:#fafafa;
+                    "
+                >
+
+                    <div style="
+                        display:flex;
+                        align-items:center;
+                        justify-content:space-between;
+                        gap:8px;
+                        margin-bottom:8px;
+                    ">
+                        <strong style="
+                            font-size:13px;
+                            color:#333;
+                        ">
+                            🌱 Publicações do Mercado
+                        </strong>
+
+                        <span style="
+                            font-size:10px;
+                            color:#888;
+                        ">
+                            recentes
+                        </span>
+                    </div>
+
+                    <div
+                        id="listaPublicacoesMercado"
+                        style="
+                            display:flex;
+                            flex-direction:column;
+                            gap:5px;
+                        "
+                    >
+                        <div style="
+                            padding:7px;
+                            text-align:center;
+                            font-size:11px;
+                            color:#888;
+                        ">
+                            A carregar publicações...
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ==============================
                      JANELA: PUBLICAR PRODUTO
                      ============================== -->
 
@@ -1849,6 +1907,7 @@ body.service-modal-open {
 
             carregarProdutos();
             carregarPrecisos();
+            carregarPublicacoesMercado();
         }
 
 
@@ -2191,6 +2250,193 @@ body.service-modal-open {
                         "
                     >
                         Não foi possível carregar o Feed.
+                    </div>
+                `;
+            }
+        }
+
+
+
+        // ============================================================
+        // PUBLICAÇÕES DO MERCADO
+        // Fica FORA do Feed administrativo.
+        // Produtos + necessidades aparecem misturados por data.
+        // ============================================================
+
+        async function carregarPublicacoesMercado() {
+
+            const container =
+                document.getElementById('listaPublicacoesMercado');
+
+            if (!container) return;
+
+            try {
+
+                const [resProdutos, resPrecisos] =
+                    await Promise.all([
+                        fetch(`${API}/produtos`),
+                        fetch(`${API}/precisos`)
+                    ]);
+
+                const produtos =
+                    await resProdutos.json();
+
+                const precisos =
+                    await resPrecisos.json();
+
+                if (
+                    !resProdutos.ok ||
+                    !resPrecisos.ok ||
+                    !Array.isArray(produtos) ||
+                    !Array.isArray(precisos)
+                ) {
+                    throw new Error(
+                        'Erro ao carregar publicações.'
+                    );
+                }
+
+                const publicacoes = [
+
+                    ...produtos.map(p => ({
+                        tipo: 'produto',
+                        data: p.data,
+                        nome: p.produto || 'Produto',
+                        autor: p.vendedor || 'Vendedor',
+                        texto:
+                            `🌾 ${p.produto || 'Produto'} · ${p.quantidade || ''} · ${p.provincia || ''}`,
+                        icone: '🌾'
+                    })),
+
+                    ...precisos.map(n => ({
+                        tipo: 'necessidade',
+                        data: n.data,
+                        nome:
+                            n.produtoDesejado ||
+                            'Necessidade',
+                        autor:
+                            n.comprador ||
+                            'Comprador',
+                        texto:
+                            `📢 Procura ${n.produtoDesejado || 'produto'} · ${n.quantidade || ''} · ${n.provincia || ''}`,
+                        icone: '📢'
+                    }))
+
+                ];
+
+                publicacoes.sort(
+                    (a, b) =>
+                        new Date(b.data || 0) -
+                        new Date(a.data || 0)
+                );
+
+                if (publicacoes.length === 0) {
+
+                    container.innerHTML = `
+                        <div style="
+                            padding:7px;
+                            text-align:center;
+                            font-size:11px;
+                            color:#888;
+                        ">
+                            Ainda não existem publicações.
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                container.innerHTML =
+                    publicacoes.map(p => {
+
+                        const data =
+                            p.data
+                                ? formatarDataPublicacao(p.data)
+                                : '';
+
+                        return `
+                            <div
+                                style="
+                                    display:flex;
+                                    align-items:center;
+                                    gap:7px;
+                                    padding:7px 8px;
+                                    border:1px solid #e5e5e5;
+                                    border-radius:8px;
+                                    background:#fff;
+                                "
+                            >
+
+                                <span style="
+                                    width:22px;
+                                    min-width:22px;
+                                    height:22px;
+                                    display:flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    border-radius:50%;
+                                    background:#f3f3f3;
+                                    font-size:13px;
+                                ">
+                                    ${p.icone}
+                                </span>
+
+                                <div style="
+                                    min-width:0;
+                                    flex:1;
+                                ">
+
+                                    <div style="
+                                        font-size:12px;
+                                        font-weight:700;
+                                        color:#333;
+                                        overflow:hidden;
+                                        text-overflow:ellipsis;
+                                        white-space:nowrap;
+                                    ">
+                                        ${p.nome}
+                                    </div>
+
+                                    <div style="
+                                        font-size:10px;
+                                        color:#777;
+                                        overflow:hidden;
+                                        text-overflow:ellipsis;
+                                        white-space:nowrap;
+                                    ">
+                                        ${p.texto}
+                                    </div>
+
+                                    <div style="
+                                        margin-top:2px;
+                                        font-size:9px;
+                                        color:#999;
+                                    ">
+                                        ${p.autor}
+                                        ${data ? ` · ${data}` : ''}
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        `;
+
+                    }).join('');
+
+            } catch (error) {
+
+                console.error(
+                    'ERRO AO CARREGAR PUBLICAÇÕES DO MERCADO:',
+                    error
+                );
+
+                container.innerHTML = `
+                    <div style="
+                        padding:7px;
+                        text-align:center;
+                        font-size:11px;
+                        color:#c62828;
+                    ">
+                        Não foi possível carregar as publicações.
                     </div>
                 `;
             }
@@ -2996,7 +3242,20 @@ async function carregarProdutos() {
 
                 await carregarProdutos();
 
-                fecharJanelaServico('janelaPublicarProduto');
+                const formulario =
+                    document.getElementById(
+                        'formPublicarProduto'
+                    );
+
+                const toggle =
+                    document.getElementById(
+                        'togglePublicarProduto'
+                    );
+
+                if (formulario && toggle) {
+                    formulario.classList.remove('open');
+                    toggle.classList.remove('open');
+                }
 
             } catch (error) {
                 console.error(
@@ -3617,46 +3876,18 @@ async function carregarProdutos() {
         }
 
         function cancelarEdicaoNecessidade() {
+            document.getElementById('necessidadeEditandoId').value = '';
 
-            const form = document.getElementById('formPreciso');
+            document.getElementById('formPreciso').reset();
 
-            if (form) {
-                form.reset();
-            }
+            document.getElementById('tituloBotaoNecessidade').textContent =
+                '📢 Publicar Necessidade de Compra';
 
-            const id = document.getElementById(
-                'necessidadeEditandoId'
-            );
+            document.getElementById('btnGuardarNecessidade').textContent =
+                'Publicar Necessidade';
 
-            if (id) {
-                id.value = '';
-            }
-
-            const botao = document.getElementById(
-                'btnGuardarNecessidade'
-            );
-
-            if (botao) {
-                botao.textContent = 'Publicar Necessidade';
-            }
-
-            const cancelar = document.getElementById(
-                'btnCancelarEdicaoNecessidade'
-            );
-
-            if (cancelar) {
-                cancelar.style.display = 'none';
-            }
-
-            const titulo = document.getElementById(
-                'tituloBotaoNecessidade'
-            );
-
-            if (titulo) {
-                titulo.textContent = '📢 Publicar Necessidade';
-            }
-
-            fecharJanelaServico('janelaPublicarNecessidade');
+            document.getElementById('btnCancelarEdicaoNecessidade').style.display =
+                'none';
         }
 
         async function removerMinhaNecessidade(id) {
@@ -3697,9 +3928,7 @@ async function carregarProdutos() {
                     'Necessidade eliminada com sucesso.'
                 );
 
-                await carregarPrecisos();
-
-                fecharJanelaServico('janelaPublicarNecessidade');
+                carregarPrecisos();
 
             } catch (error) {
                 console.error(
@@ -3932,12 +4161,6 @@ function abrirJanelaServico(id) {
     if (id === "janelaMuralNecessidades") {
         if (typeof carregarPrecisos === "function") {
             carregarPrecisos();
-        }
-    }
-
-    if (id === "janelaFeedStartupAgro") {
-        if (typeof carregarFeedStartupAgro === "function") {
-            carregarFeedStartupAgro();
         }
     }
 
