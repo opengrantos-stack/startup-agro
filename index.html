@@ -568,6 +568,126 @@ button.btn-blue {
 }
 
 </style>
+
+<style>
+/* =========================================================
+   STARTUP-AGRO — JANELAS DE SERVIÇO
+   O conteúdo NÃO expande o painel principal.
+   Cada serviço abre como uma janela sobre a página.
+   ========================================================= */
+
+.service-button {
+    width:100%;
+    min-height:42px;
+    padding:10px 12px;
+    border:1px solid #2e7d32;
+    border-radius:9px;
+    background:#fff;
+    color:#2e7d32;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    box-sizing:border-box;
+}
+
+.service-button:hover {
+    background:#f5faf5;
+}
+
+.service-button:active {
+    transform:scale(.99);
+}
+
+.service-modal {
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    background:rgba(0,0,0,.48);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:12px;
+    box-sizing:border-box;
+}
+
+.service-modal.hidden {
+    display:none !important;
+}
+
+.service-modal-box {
+    width:min(100%, 520px);
+    max-height:92vh;
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 12px 40px rgba(0,0,0,.25);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+}
+
+.service-modal-header {
+    min-height:50px;
+    padding:10px 12px;
+    background:#f7faf7;
+    border-bottom:1px solid #e5e5e5;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    box-sizing:border-box;
+}
+
+.service-modal-header strong {
+    color:#2e7d32;
+    font-size:15px;
+}
+
+.service-close {
+    width:36px;
+    height:36px;
+    border:0;
+    border-radius:50%;
+    background:#eee;
+    color:#555;
+    font-size:24px;
+    line-height:1;
+    cursor:pointer;
+}
+
+.service-modal-body {
+    padding:12px;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+}
+
+.service-modal-body input,
+.service-modal-body select {
+    width:100%;
+    box-sizing:border-box;
+    margin-bottom:8px;
+}
+
+.service-modal-body form {
+    width:100%;
+}
+
+.service-modal-body button {
+    box-sizing:border-box;
+}
+
+body.service-modal-open {
+    overflow:hidden;
+}
+
+.admin-only.hidden {
+    display:none !important;
+}
+</style>
+
 </head>
 <body>
     <div class="app-container">
@@ -771,432 +891,561 @@ button.btn-blue {
                 <div
                     id="modoContaAtual"
                     style="
-                        margin-top:4px;
+                        margin:6px 0 12px;
                         text-align:center;
                         font-size:12px;
                         color:#777;
+                        font-weight:700;
                     ">
                     Selecione um serviço para continuar.
                 </div>
 
-
+                <!-- ==============================
+                     ADMINISTRADOR
+                     ============================== -->
 
                 <button
                     type="button"
+                    id="btnGerirFeed"
+                    class="service-button admin-only hidden"
+                    onclick="abrirJanelaServico('janelaGerirFeed')">
+                    ⚙️ Gerir Feed
+                </button>
 
-                <!-- ==================================================
-                     FEED STARTUP-AGRO
-                     Funcionalidade independente de Mercado,
-                     Produtos e Mural das Necessidades.
-                     ================================================== -->
+
+                <!-- ==============================
+                     JANELA: GERIR FEED
+                     ============================== -->
+
+                <div
+                    id="janelaGerirFeed"
+                    class="service-modal hidden">
+
+                    <div class="service-modal-box">
+
+                        <div class="service-modal-header">
+
+                            <strong>
+                                ⚙️ Gerir Feed
+                            </strong>
+
+                            <button
+                                type="button"
+                                class="service-close"
+                                onclick="fecharJanelaServico('janelaGerirFeed')">
+                                ×
+                            </button>
+
+                        </div>
+
+                        <div class="service-modal-body">
+
+                            <p style="
+                                margin-top:0;
+                                color:#666;
+                                font-size:13px;
+                                line-height:1.5;
+                            ">
+                                O Feed reúne automaticamente as
+                                publicações recentes de produtos e
+                                necessidades.
+                            </p>
+
+                            <div
+                                id="conteudoGestaoFeed"
+                                style="
+                                    padding:12px;
+                                    border:1px solid #e0e0e0;
+                                    border-radius:10px;
+                                    background:#fafafa;
+                                "
+                            >
+
+                                <strong>
+                                    📰 Publicações recentes
+                                </strong>
+
+                                <div
+                                    id="listaGestaoFeed"
+                                    style="margin-top:10px;"
+                                >
+                                    <p style="
+                                        color:#777;
+                                        text-align:center;
+                                    ">
+                                        A carregar...
+                                    </p>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- ==============================
+                     BOTÕES PRINCIPAIS
+                     ============================== -->
+
+                <div id="botoesServicos" style="
+                    display:flex;
+                    flex-direction:column;
+                    gap:7px;
+                    width:100%;
+                ">
+
+                    <button
+                        type="button"
+                        id="togglePublicarProduto"
+                        class="service-button"
+                        onclick="abrirJanelaServico('janelaPublicarProduto')">
+                        <span>🌾 Publicar Produto</span>
+                        <span>›</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        id="toggleMercadoPrincipal"
+                        class="service-button"
+                        onclick="abrirJanelaServico('janelaMercado')">
+                        <span>🛒 Produtos Disponíveis no Mercado</span>
+                        <span>›</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        id="togglePublicarNecessidade"
+                        class="service-button"
+                        onclick="abrirJanelaServico('janelaPublicarNecessidade')">
+                        <span>📢 Publicar Necessidade</span>
+                        <span>›</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        id="toggleMuralNecessidades"
+                        class="service-button"
+                        onclick="abrirJanelaServico('janelaMuralNecessidades')">
+                        <span>📋 Mural de Necessidades</span>
+                        <span>›</span>
+                    </button>
+
+                </div>
+
+                <!-- ==============================
+                     JANELA: PUBLICAR PRODUTO
+                     ============================== -->
+
+                <div
+                    id="janelaPublicarProduto"
+                    class="service-modal hidden">
+
+                    <div class="service-modal-box">
+
+                        <div class="service-modal-header">
+                            <strong>🌾 Publicar Produto</strong>
+
+                            <button
+                                type="button"
+                                class="service-close"
+                                onclick="fecharJanelaServico('janelaPublicarProduto')">
+                                ×
+                            </button>
+                        </div>
+
+                        <div class="service-modal-body">
+
+                            <form
+                                id="formProduto"
+                                onsubmit="registarProduto(event)">
+
+                                <input
+                                    type="hidden"
+                                    id="produtoEditandoId"
+                                    value="">
+
+                                <input
+                                    type="text"
+                                    id="produtoNome"
+                                    placeholder="Nome do Produto (ex: Tomate, Batata)"
+                                    required>
+
+                                <input
+                                    type="text"
+                                    id="produtoPreco"
+                                    placeholder="Preço (ex: 2000 Kz)"
+                                    required>
+
+                                <input
+                                    type="text"
+                                    id="produtoQtd"
+                                    placeholder="Quantidade (ex: 50 sacos)">
+
+                                <input
+                                    type="tel"
+                                    id="contactoVendedor"
+                                    placeholder="Contacto do Vendedor"
+                                    required>
+
+                                <select id="provinciaVendedor" required>
+                                    <option value="">Selecione a Província</option>
+                                    <option value="Bengo">Bengo</option>
+                                    <option value="Benguela">Benguela</option>
+                                    <option value="Bié">Bié</option>
+                                    <option value="Cabinda">Cabinda</option>
+                                    <option value="Cuando">Cuando</option>
+                                    <option value="Cuanza Norte">Cuanza Norte</option>
+                                    <option value="Cuanza Sul">Cuanza Sul</option>
+                                    <option value="Cubango">Cubango</option>
+                                    <option value="Cunene">Cunene</option>
+                                    <option value="Huambo">Huambo</option>
+                                    <option value="Huíla">Huíla</option>
+                                    <option value="Icolo e Bengo">Icolo e Bengo</option>
+                                    <option value="Luanda">Luanda</option>
+                                    <option value="Lunda Norte">Lunda Norte</option>
+                                    <option value="Lunda Sul">Lunda Sul</option>
+                                    <option value="Malanje">Malanje</option>
+                                    <option value="Moxico">Moxico</option>
+                                    <option value="Moxico Leste">Moxico Leste</option>
+                                    <option value="Namibe">Namibe</option>
+                                    <option value="Uíge">Uíge</option>
+                                    <option value="Zaire">Zaire</option>
+                                </select>
+
+                                <label for="cameraInput" class="file-label">
+                                    📷 Tirar Foto
+                                </label>
+
+                                <input
+                                    type="file"
+                                    id="cameraInput"
+                                    accept="image/*"
+                                    capture="environment"
+                                    style="display:none;">
+
+                                <label for="galleryInput" class="file-label">
+                                    🖼️ Escolher da Galeria
+                                </label>
+
+                                <input
+                                    type="file"
+                                    id="galleryInput"
+                                    accept="image/*"
+                                    style="display:none;">
+
+                                <button
+                                    type="submit"
+                                    id="botaoSubmitProduto"
+                                    class="publish-submit">
+                                    Publicar Produto
+                                </button>
+
+                                <button
+                                    type="button"
+                                    id="botaoCancelarEdicaoProduto"
+                                    onclick="cancelarEdicaoProduto()"
+                                    style="display:none;">
+                                    Cancelar edição
+                                </button>
+
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==============================
+                     JANELA: MERCADO
+                     ============================== -->
+
+                <div
+                    id="janelaMercado"
+                    class="service-modal hidden">
+
+                    <div class="service-modal-box">
+
+                        <div class="service-modal-header">
+                            <strong>🛒 Produtos Disponíveis no Mercado</strong>
+
+                            <button
+                                type="button"
+                                class="service-close"
+                                onclick="fecharJanelaServico('janelaMercado')">
+                                ×
+                            </button>
+                        </div>
+
+                        <div class="service-modal-body">
+
+                            <input
+                                type="text"
+                                id="filtroProduto"
+                                placeholder="🔎 Pesquisar produto..."
+                                oninput="carregarProdutos()">
+
+                            <select
+                                id="filtroProvincia"
+                                onchange="carregarProdutos()">
+
+                                <option value="">Todas as Províncias</option>
+                                <option value="Bengo">Bengo</option>
+                                <option value="Benguela">Benguela</option>
+                                <option value="Bié">Bié</option>
+                                <option value="Cabinda">Cabinda</option>
+                                <option value="Cuando">Cuando</option>
+                                <option value="Cuanza Norte">Cuanza Norte</option>
+                                <option value="Cuanza Sul">Cuanza Sul</option>
+                                <option value="Cubango">Cubango</option>
+                                <option value="Cunene">Cunene</option>
+                                <option value="Huambo">Huambo</option>
+                                <option value="Huíla">Huíla</option>
+                                <option value="Icolo e Bengo">Icolo e Bengo</option>
+                                <option value="Luanda">Luanda</option>
+                                <option value="Lunda Norte">Lunda Norte</option>
+                                <option value="Lunda Sul">Lunda Sul</option>
+                                <option value="Malanje">Malanje</option>
+                                <option value="Moxico">Moxico</option>
+                                <option value="Moxico Leste">Moxico Leste</option>
+                                <option value="Namibe">Namibe</option>
+                                <option value="Uíge">Uíge</option>
+                                <option value="Zaire">Zaire</option>
+
+                            </select>
+
+                            <div
+                                id="listaProdutos"
+                                style="margin-top:10px;">
+                                <p style="text-align:center;color:var(--text-muted);">
+                                    A carregar...
+                                </p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==============================
+                     JANELA: PUBLICAR NECESSIDADE
+                     ============================== -->
+
+                <div
+                    id="janelaPublicarNecessidade"
+                    class="service-modal hidden">
+
+                    <div class="service-modal-box">
+
+                        <div class="service-modal-header">
+                            <strong>📢 Publicar Necessidade</strong>
+
+                            <button
+                                type="button"
+                                class="service-close"
+                                onclick="fecharJanelaServico('janelaPublicarNecessidade')">
+                                ×
+                            </button>
+                        </div>
+
+                        <div class="service-modal-body">
+
+                            <form
+                                id="formPreciso"
+                                onsubmit="registarNecessidade(event)">
+
+                                <input
+                                    type="hidden"
+                                    id="necessidadeEditandoId"
+                                    value="">
+
+                                <input
+                                    type="text"
+                                    id="produtoDesejado"
+                                    placeholder="Produto que procura (ex: Milho)"
+                                    required>
+
+                                <input
+                                    type="text"
+                                    id="qtdDesejada"
+                                    placeholder="Quantidade desejada (ex: 20 sacos)">
+
+                                <select
+                                    id="provinciaComprador"
+                                    required>
+
+                                    <option value="">Selecione a Província</option>
+                                    <option value="Bengo">Bengo</option>
+                                    <option value="Benguela">Benguela</option>
+                                    <option value="Bié">Bié</option>
+                                    <option value="Cabinda">Cabinda</option>
+                                    <option value="Cuando">Cuando</option>
+                                    <option value="Cuanza Norte">Cuanza Norte</option>
+                                    <option value="Cuanza Sul">Cuanza Sul</option>
+                                    <option value="Cubango">Cubango</option>
+                                    <option value="Cunene">Cunene</option>
+                                    <option value="Huambo">Huambo</option>
+                                    <option value="Huíla">Huíla</option>
+                                    <option value="Icolo e Bengo">Icolo e Bengo</option>
+                                    <option value="Luanda">Luanda</option>
+                                    <option value="Lunda Norte">Lunda Norte</option>
+                                    <option value="Lunda Sul">Lunda Sul</option>
+                                    <option value="Malanje">Malanje</option>
+                                    <option value="Moxico">Moxico</option>
+                                    <option value="Moxico Leste">Moxico Leste</option>
+                                    <option value="Namibe">Namibe</option>
+                                    <option value="Uíge">Uíge</option>
+                                    <option value="Zaire">Zaire</option>
+
+                                </select>
+
+                                <input
+                                    type="tel"
+                                    id="contactoComprador"
+                                    placeholder="Seu Telefone / WhatsApp"
+                                    required>
+
+                                <button
+                                    type="submit"
+                                    class="btn-blue"
+                                    id="btnGuardarNecessidade">
+                                    Publicar Necessidade
+                                </button>
+
+                                <button
+                                    type="button"
+                                    id="btnCancelarEdicaoNecessidade"
+                                    onclick="cancelarEdicaoNecessidade()"
+                                    style="display:none;">
+                                    Cancelar edição
+                                </button>
+
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==============================
+                     JANELA: MURAL
+                     ============================== -->
+
+                <div
+                    id="janelaMuralNecessidades"
+                    class="service-modal hidden">
+
+                    <div class="service-modal-box">
+
+                        <div class="service-modal-header">
+                            <strong>📋 Mural de Necessidades</strong>
+
+                            <button
+                                type="button"
+                                class="service-close"
+                                onclick="fecharJanelaServico('janelaMuralNecessidades')">
+                                ×
+                            </button>
+                        </div>
+
+                        <div class="service-modal-body">
+
+                            <input
+                                type="text"
+                                id="filtroNecessidade"
+                                placeholder="🔎 Pesquisar necessidade..."
+                                oninput="filtrarNecessidadesLocalmente()">
+
+                            <select
+                                id="filtroProvinciaPreciso"
+                                onchange="carregarPrecisos()">
+
+                                <option value="">Todas as Províncias</option>
+                                <option value="Bengo">Bengo</option>
+                                <option value="Benguela">Benguela</option>
+                                <option value="Bié">Bié</option>
+                                <option value="Cabinda">Cabinda</option>
+                                <option value="Cuando">Cuando</option>
+                                <option value="Cuanza Norte">Cuanza Norte</option>
+                                <option value="Cuanza Sul">Cuanza Sul</option>
+                                <option value="Cubango">Cubango</option>
+                                <option value="Cunene">Cunene</option>
+                                <option value="Huambo">Huambo</option>
+                                <option value="Huíla">Huíla</option>
+                                <option value="Icolo e Bengo">Icolo e Bengo</option>
+                                <option value="Luanda">Luanda</option>
+                                <option value="Lunda Norte">Lunda Norte</option>
+                                <option value="Lunda Sul">Lunda Sul</option>
+                                <option value="Malanje">Malanje</option>
+                                <option value="Moxico">Moxico</option>
+                                <option value="Moxico Leste">Moxico Leste</option>
+                                <option value="Namibe">Namibe</option>
+                                <option value="Uíge">Uíge</option>
+                                <option value="Zaire">Zaire</option>
+
+                            </select>
+
+                            <div
+                                id="listaPrecisos"
+                                style="margin-top:10px;">
+                                <p style="text-align:center;color:var(--text-muted);">
+                                    A carregar mural...
+                                </p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==============================
+                     FEED
+                     ============================== -->
 
                 <section
                     id="painelFeedStartupAgro"
                     style="
                         width:100%;
-                        margin:4px 0 6px 0;
-                    "
-                >
+                        margin:14px 0 0;
+                    ">
 
-                    <button
-                        type="button"
-                        id="toggleFeedStartupAgro"
-                        onclick="alternarFeedStartupAgro()"
-                        style="
-                            width:100%;
-                            min-height:34px;
-                            padding:6px 10px;
-                            margin:0 0 4px 0;
-                            border:1px solid #2e7d32;
-                            border-radius:8px;
-                            background:#fff;
-                            color:#2e7d32;
-                            font-weight:700;
-                            font-size:13px;
-                            line-height:1.2;
-                            cursor:pointer;
-                        "
-                    >
+                    <div style="
+                        border-top:1px solid #e0e0e0;
+                        padding-top:12px;
+                        margin-bottom:8px;
+                        font-size:15px;
+                        font-weight:800;
+                        color:#2e7d32;
+                    ">
                         📰 Feed Startup-Agro
-                        <span id="setaFeedStartupAgro">⌄</span>
-                    </button>
+                    </div>
 
                     <div
-                        id="conteudoFeedStartupAgro"
-                        class="hidden"
+                        id="listaFeedStartupAgro"
                         style="
-                            width:100%;
-                        "
-                    >
+                            display:flex;
+                            flex-direction:column;
+                            gap:8px;
+                        ">
 
-                        <div
-                            id="listaFeedStartupAgro"
-                            style="
-                                display:flex;
-                                flex-direction:column;
-                                gap:8px;
-                            "
-                        >
-                            <div
-                                style="
-                                    padding:10px;
-                                    border:1px solid #e0e0e0;
-                                    border-radius:8px;
-                                    background:#fff;
-                                    color:#777;
-                                    font-size:12px;
-                                    text-align:center;
-                                "
-                            >
-                                📰 A carregar publicações...
-                            </div>
+                        <div style="
+                            padding:10px;
+                            border:1px solid #e0e0e0;
+                            border-radius:8px;
+                            background:#fff;
+                            color:#777;
+                            font-size:12px;
+                            text-align:center;
+                        ">
+                            📰 A carregar publicações...
                         </div>
 
                     </div>
 
                 </section>
 
-                    id="togglePublicarProduto"
-                    class="publish-toggle"
-                    onclick="alternarPublicacaoProduto()"
-                    style="
-                        width:100%;
-                        padding:6px 10px;
-                        min-height:34px;
-                        margin:4px 0 4px 0;
-                        border:1px solid #2e7d32;
-                        border-radius:8px;
-                        background:#fff;
-                        color:#2e7d32;
-                        font-weight:700;
-                        font-size:13px;
-                        line-height:1.2;
-                        cursor:pointer;
-                    ">
-                    <span>🌾 Publicar Produto</span>
-                    <span class="publish-arrow">⌄</span>
-                </button><!-- MERCADO -->
-                <button
-                    type="button"
-                    id="toggleMercadoPrincipal"
-                    onclick="alternarMercadoPrincipal()"
-                    style="
-                        width:100%;
-                        padding:6px 10px;
-                        min-height:34px;
-                        margin:4px 0 4px 0;
-                        border:1px solid #2e7d32;
-                        border-radius:8px;
-                        background:#fff;
-                        color:#2e7d32;
-                        font-weight:700;
-                        font-size:13px;
-                        line-height:1.2;
-                        cursor:pointer;
-                    ">
-                    🛒 Produtos Disponíveis no Mercado
-                    <span id="setaMercadoPrincipal">⌄</span>
-                </button>
-
-                <div
-                    id="conteudoMercado"
-                    class="hidden"
-                    style="margin:0 0 6px 0;">
-
-                    <input
-                        type="text"
-                        id="filtroProduto"
-                        placeholder="🔎 Pesquisar produto..."
-                        style="margin-top:4px;">
-
-                    <select
-                        id="filtroProvincia"
-                        onchange="carregarProdutos()">
-
-                        <option value="">Todas as Províncias</option>
-                        <option value="Bengo">Bengo</option>
-                        <option value="Benguela">Benguela</option>
-                        <option value="Bié">Bié</option>
-                        <option value="Cabinda">Cabinda</option>
-                        <option value="Cuando">Cuando</option>
-                        <option value="Cuanza Norte">Cuanza Norte</option>
-                        <option value="Cuanza Sul">Cuanza Sul</option>
-                        <option value="Cubango">Cubango</option>
-                        <option value="Cunene">Cunene</option>
-                        <option value="Huambo">Huambo</option>
-                        <option value="Huíla">Huíla</option>
-                        <option value="Icolo e Bengo">Icolo e Bengo</option>
-                        <option value="Luanda">Luanda</option>
-                        <option value="Lunda Norte">Lunda Norte</option>
-                        <option value="Lunda Sul">Lunda Sul</option>
-                        <option value="Malanje">Malanje</option>
-                        <option value="Moxico">Moxico</option>
-                        <option value="Moxico Leste">Moxico Leste</option>
-                        <option value="Namibe">Namibe</option>
-                        <option value="Uíge">Uíge</option>
-                        <option value="Zaire">Zaire</option>
-
-                    </select>
-
-                    <button
-                        type="button"
-                        onclick="carregarProdutos()"
-                        style="
-                            width:100%;
-                            padding:6px 10px;
-                            min-height:34px;
-                            margin:4px 0 6px 0;
-                            border:1px solid #2e7d32;
-                            border-radius:8px;
-                            background:#2e7d32;
-                            color:#fff;
-                            font-weight:700;
-                            font-size:13px;
-                            cursor:pointer;
-                        ">
-                        Filtrar Mercado
-                    </button>
-
-                    <div
-                        id="listaProdutos"
-                        style="margin-top:6px;">
-
-                        <p style="
-                            text-align:center;
-                            color:var(--text-muted);
-                        ">
-                            A carregar...
-                        </p>
-
-                    </div>
-
-                </div>
-
+                <!-- PAINÉIS MANTIDOS PARA COMPATIBILIDADE -->
+                <div id="painelAgricultor" class="hidden"></div>
+                <div id="painelComprador" class="hidden"></div>
 
             </div>
-
-            <!-- PAINEL DO AGRICULTOR -->
-            <div id="painelAgricultor" class="card-section hidden" style="margin-top:4px;"></div></div>
-
-            </div><div id="formPublicarProduto" class="publish-form-wrap">
-
-                    <form id="formProduto" onsubmit="registarProduto(event)">
-                        <input type="hidden" id="produtoEditandoId" value="">
-
-                        <input type="text"
-                               id="produtoNome"
-                               placeholder="Nome do Produto (ex: Tomate, Batata)"
-                               required>
-
-                        <input type="text"
-                               id="produtoPreco"
-                               placeholder="Preço (ex: 2000 Kz)"
-                               required>
-
-                        <input type="text"
-                               id="produtoQtd"
-                               placeholder="Quantidade (ex: 50 sacos)">
-
-                        <input type="tel"
-                               id="contactoVendedor"
-                               placeholder="Contacto do Vendedor (ex: 923456789)"
-                               required>
-
-                        <select id="provinciaVendedor" required>
-                            <option value="">Selecione a Província</option>
-                            <option value="Bengo">Bengo</option>
-                            <option value="Benguela">Benguela</option>
-                            <option value="Bié">Bié</option>
-                            <option value="Cabinda">Cabinda</option>
-                            <option value="Cuando">Cuando</option>
-                            <option value="Cuanza Norte">Cuanza Norte</option>
-                            <option value="Cuanza Sul">Cuanza Sul</option>
-                            <option value="Cubango">Cubango</option>
-                            <option value="Cunene">Cunene</option>
-                            <option value="Huambo">Huambo</option>
-                            <option value="Huíla">Huíla</option>
-                            <option value="Icolo e Bengo">Icolo e Bengo</option>
-                            <option value="Luanda">Luanda</option>
-                            <option value="Lunda Norte">Lunda Norte</option>
-                            <option value="Lunda Sul">Lunda Sul</option>
-                            <option value="Malanje">Malanje</option>
-                            <option value="Moxico">Moxico</option>
-                            <option value="Moxico Leste">Moxico Leste</option>
-                            <option value="Namibe">Namibe</option>
-                            <option value="Uíge">Uíge</option>
-                            <option value="Zaire">Zaire</option>
-                        </select>
-
-                        <label for="cameraInput" class="file-label">
-                            📷 Tirar Foto
-                        </label>
-
-                        <input type="file"
-                               id="cameraInput"
-                               accept="image/*"
-                               capture="environment"
-                               style="display:none;">
-
-                        <label for="galleryInput" class="file-label">
-                            🖼️ Escolher da Galeria
-                        </label>
-
-                        <input type="file"
-                               id="galleryInput"
-                               accept="image/*"
-                               style="display:none;">
-
-                        <button type="submit"
-                                id="botaoSubmitProduto"
-                                class="publish-submit">
-                            Publicar Produto
-                        </button>
-
-                        <button
-                            type="button"
-                            id="botaoCancelarEdicaoProduto"
-                            onclick="cancelarEdicaoProduto()"
-                            style="display:none; width:100%; margin-top:10px; padding:13px; border:1px solid #777; border-radius:10px; background:#fff; color:#555; font-weight:700; cursor:pointer;">
-                            Cancelar edição
-                        </button>
-
-                    </form>
-
-                </div>
-            </div>
-
-            <!-- PAINEL DO COMPRADOR -->
-            <div id="painelComprador" class="card-section blue hidden" style="margin-top:4px;">
-
-                <button
-                    type="button"
-                    id="togglePublicarNecessidade"
-                    class="publish-toggle"
-                    style="display:none;"
-                    onclick="alternarPublicacaoNecessidade()"
-                    style="padding:5px 10px; min-height:34px; margin-top:0; margin-bottom:4px;">
-
-                    <span id="tituloBotaoNecessidade">🛒 Publicar Necessidade</span>
-                    <span class="publish-arrow">⌄</span>
-
-                </button>
-
-                <div
-                    id="formPublicarNecessidade"
-                    class="publish-form-wrap">
-
-                    <form id="formPreciso" onsubmit="registarNecessidade(event)">
-
-                        <input
-                            type="hidden"
-                            id="necessidadeEditandoId"
-                            value="">
-
-                        <input
-                            type="text"
-                            id="produtoDesejado"
-                            placeholder="Produto que procura (ex: Milho)"
-                            required>
-
-                        <input
-                            type="text"
-                            id="qtdDesejada"
-                            placeholder="Quantidade desejada (ex: 20 sacos)">
-
-                        <select id="provinciaComprador" required>
-                            <option value="">Selecione a Província</option>
-                            <option value="Bengo">Bengo</option>
-                            <option value="Benguela">Benguela</option>
-                            <option value="Bié">Bié</option>
-                            <option value="Cabinda">Cabinda</option>
-                            <option value="Cuando">Cuando</option>
-                            <option value="Cuanza Norte">Cuanza Norte</option>
-                            <option value="Cuanza Sul">Cuanza Sul</option>
-                            <option value="Cubango">Cubango</option>
-                            <option value="Cunene">Cunene</option>
-                            <option value="Huambo">Huambo</option>
-                            <option value="Huíla">Huíla</option>
-                            <option value="Icolo e Bengo">Icolo e Bengo</option>
-                            <option value="Luanda">Luanda</option>
-                            <option value="Lunda Norte">Lunda Norte</option>
-                            <option value="Lunda Sul">Lunda Sul</option>
-                            <option value="Malanje">Malanje</option>
-                            <option value="Moxico">Moxico</option>
-                            <option value="Moxico Leste">Moxico Leste</option>
-                            <option value="Namibe">Namibe</option>
-                            <option value="Uíge">Uíge</option>
-                            <option value="Zaire">Zaire</option>
-                        </select>
-
-                        <input
-                            type="text"
-                            id="contactoComprador"
-                            placeholder="Seu Telefone / WhatsApp"
-                            required>
-
-                        <button
-                            type="submit"
-                            class="btn-blue"
-                            id="btnGuardarNecessidade">
-                            Publicar Necessidade
-                        </button>
-
-                        <button
-                            type="button"
-                            id="btnCancelarEdicaoNecessidade"
-                            onclick="cancelarEdicaoNecessidade()"
-                            style="display:none; width:100%; margin-top:10px; padding:6px 10px; border:1px solid #777; border-radius:10px; background:#fff; color:#555; font-weight:700; cursor:pointer;">
-                            Cancelar edição
-                        </button>
-
-                    </form>
-
-                </div>
-            </div>
-
-            <!-- MURAL -->
-            <div class="card-section blue">
-                <h2 style="
-                    margin:0 0 6px 0;
-                    font-size:16px;
-                    line-height:1.2;
-                ">📋 Mural de Necessidades</h2>
-                <select id="filtroProvinciaPreciso"
-                        style="
-                            width:100%;
-                            padding:6px 10px;
-                            min-height:34px;
-                            margin:0 0 4px 0;
-                        " onchange="carregarPrecisos()">
-                    <option value="">Todas as Províncias</option>
-                    <option value="Bengo">Bengo</option>
-                    <option value="Benguela">Benguela</option>
-                    <option value="Bié">Bié</option>
-                    <option value="Cabinda">Cabinda</option>
-                    <option value="Cuando">Cuando</option>
-                    <option value="Cuanza Norte">Cuanza Norte</option>
-                    <option value="Cuanza Sul">Cuanza Sul</option>
-                    <option value="Cubango">Cubango</option>
-                    <option value="Cunene">Cunene</option>
-                    <option value="Huambo">Huambo</option>
-                    <option value="Huíla">Huíla</option>
-                    <option value="Icolo e Bengo">Icolo e Bengo</option>
-                    <option value="Luanda">Luanda</option>
-                    <option value="Lunda Norte">Lunda Norte</option>
-                    <option value="Lunda Sul">Lunda Sul</option>
-                    <option value="Malanje">Malanje</option>
-                    <option value="Moxico">Moxico</option>
-                    <option value="Moxico Leste">Moxico Leste</option>
-                    <option value="Namibe">Namibe</option>
-                    <option value="Uíge">Uíge</option>
-                    <option value="Zaire">Zaire</option>
-                    </select>
-                <div id="listaPrecisos" style="margin-top: 15px;">
-                    <p style="text-align: center; color: var(--text-muted);">A carregar mural...</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script>
         const API = '';
@@ -3644,5 +3893,266 @@ async function carregarProdutos() {
         }
 
 </script>
+
+<script>
+/* =========================================================
+   STARTUP-AGRO — SISTEMA NOVO DE JANELAS
+   ========================================================= */
+
+function abrirJanelaServico(id) {
+
+    const janela = document.getElementById(id);
+
+    if (!janela) {
+        console.warn("Janela não encontrada:", id);
+        return;
+    }
+
+    document.querySelectorAll(".service-modal").forEach(function(item) {
+        item.classList.add("hidden");
+    });
+
+    janela.classList.remove("hidden");
+
+    document.body.classList.add("service-modal-open");
+
+    /* Carregar o conteúdo somente quando a janela é aberta */
+    if (id === "janelaMercado") {
+        if (typeof carregarProdutos === "function") {
+            carregarProdutos();
+        }
+    }
+
+    if (id === "janelaMuralNecessidades") {
+        if (typeof carregarPrecisos === "function") {
+            carregarPrecisos();
+        }
+    }
+
+    if (id === "janelaPublicarProduto") {
+        const campo = document.getElementById("produtoNome");
+        if (campo) {
+            setTimeout(() => campo.focus(), 150);
+        }
+    }
+
+    if (id === "janelaPublicarNecessidade") {
+        const campo = document.getElementById("produtoDesejado");
+        if (campo) {
+            setTimeout(() => campo.focus(), 150);
+        }
+    }
+}
+
+
+function fecharJanelaServico(id) {
+
+    const janela = document.getElementById(id);
+
+    if (janela) {
+        janela.classList.add("hidden");
+    }
+
+    const abertas = document.querySelectorAll(
+        ".service-modal:not(.hidden)"
+    );
+
+    if (abertas.length === 0) {
+        document.body.classList.remove("service-modal-open");
+    }
+}
+
+
+/* Fechar ao tocar fora da caixa */
+document.addEventListener("click", function(event) {
+
+    if (!event.target.classList.contains("service-modal")) {
+        return;
+    }
+
+    event.target.classList.add("hidden");
+
+    const abertas = document.querySelectorAll(
+        ".service-modal:not(.hidden)"
+    );
+
+    if (abertas.length === 0) {
+        document.body.classList.remove("service-modal-open");
+    }
+});
+
+
+/* Fechar com ESC */
+document.addEventListener("keydown", function(event) {
+
+    if (event.key !== "Escape") {
+        return;
+    }
+
+    const abertas = document.querySelectorAll(
+        ".service-modal:not(.hidden)"
+    );
+
+    abertas.forEach(function(janela) {
+        janela.classList.add("hidden");
+    });
+
+    document.body.classList.remove("service-modal-open");
+});
+
+
+/* =========================================================
+   MODO VENDEDOR / COMPRADOR
+   ========================================================= */
+
+function atualizarModoVisualStartupAgro(modo) {
+
+    const indicador =
+        document.getElementById("modoContaAtual");
+
+    if (!indicador) {
+        return;
+    }
+
+    if (modo === "vendedor") {
+
+        indicador.textContent =
+            "🌾 Modo Vendedor ativado.";
+
+        indicador.style.color = "#2e7d32";
+
+    } else if (modo === "comprador") {
+
+        indicador.textContent =
+            "🛒 Modo Comprador ativado.";
+
+        indicador.style.color = "#1976d2";
+
+    }
+}
+
+
+/*
+ * Mantemos a função existente do projeto, caso outras partes
+ * ainda dependam dela, mas atualizamos o indicador.
+ */
+const selecionarModoContaOriginal =
+    window.selecionarModoConta;
+
+window.selecionarModoConta = function(modo) {
+
+    if (typeof selecionarModoContaOriginal === "function") {
+        try {
+            selecionarModoContaOriginal(modo);
+        } catch (erro) {
+            console.warn(
+                "Função antiga de modo ignorada:",
+                erro
+            );
+        }
+    }
+
+    atualizarModoVisualStartupAgro(modo);
+
+    localStorage.setItem(
+        "startup_agro_modo",
+        modo
+    );
+};
+
+
+/* =========================================================
+   PERFIL
+   ========================================================= */
+
+function atualizarPerfilStartupAgro() {
+
+    const nome =
+        utilizadorAtual &&
+        (
+            utilizadorAtual.nome ||
+            utilizadorAtual.name ||
+            utilizadorAtual.usuario ||
+            utilizadorAtual.username
+        );
+
+    const elementos = [
+        document.getElementById("nomeUsuario"),
+        document.getElementById("perfilNome"),
+        document.getElementById("nomePerfil")
+    ];
+
+    elementos.forEach(function(elemento) {
+
+        if (elemento && nome) {
+            elemento.textContent = nome;
+        }
+
+    });
+}
+
+
+/* =========================================================
+   ADMINISTRADOR
+   ========================================================= */
+
+function atualizarAcessoAdministrador() {
+
+    const botao =
+        document.getElementById("btnGerirFeed");
+
+    if (!botao) {
+        return;
+    }
+
+    const u = utilizadorAtual || {};
+
+    const administrador =
+        u.admin === true ||
+        u.isAdmin === true ||
+        u.role === "admin" ||
+        u.tipo === "admin" ||
+        u.perfil === "admin";
+
+    if (administrador) {
+        botao.classList.remove("hidden");
+    } else {
+        botao.classList.add("hidden");
+    }
+}
+
+
+/* =========================================================
+   INICIALIZAÇÃO DO NOVO PAINEL
+   ========================================================= */
+
+function inicializarPainelStartupAgro() {
+
+    atualizarPerfilStartupAgro();
+
+    atualizarAcessoAdministrador();
+
+    const modoSalvo =
+        localStorage.getItem(
+            "startup_agro_modo"
+        );
+
+    if (modoSalvo) {
+        atualizarModoVisualStartupAgro(modoSalvo);
+    }
+}
+
+
+/* Executar depois da página carregar */
+window.addEventListener("load", function() {
+
+    setTimeout(
+        inicializarPainelStartupAgro,
+        300
+    );
+
+});
+</script>
+
 </body>
 </html>
