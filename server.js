@@ -1528,6 +1528,16 @@ app.post('/precisos', async (req, res) => {
 // ============================================================
 
 // Listar publicações recentes do Feed
+//
+// O Feed reúne automaticamente:
+// 1. Publicações feitas pelo administrador;
+// 2. Produtos publicados no mercado;
+// 3. Necessidades publicadas no mural.
+//
+// Produtos e necessidades não são copiados para a tabela
+// feed_publicacoes. O Feed lê diretamente as tabelas principais,
+// por isso edição e eliminação ficam sincronizadas automaticamente.
+
 app.get('/feed-publicacoes', async (req, res) => {
     try {
 
@@ -1545,8 +1555,57 @@ app.get('/feed-publicacoes', async (req, res) => {
                 destaque,
                 data
             FROM feed_publicacoes
+
+            UNION ALL
+
+            SELECT
+                -p.id AS id,
+                p.produto AS titulo,
+                CONCAT(
+                    '🌾 Produto disponível: ',
+                    p.produto,
+                    ' | Preço: ',
+                    p.preco,
+                    ' | Quantidade: ',
+                    COALESCE(p.quantidade, '1'),
+                    ' | Província: ',
+                    p.provincia
+                ) AS conteudo,
+                'produto' AS tipo,
+                p.vendedor AS "autorNome",
+                'vendedor' AS "autorTipo",
+                p.imagem,
+                p.id AS "produtoId",
+                NULL::INTEGER AS "precisoId",
+                FALSE AS destaque,
+                p.data
+            FROM produtos p
+
+            UNION ALL
+
+            SELECT
+                (-1000000000 - n.id) AS id,
+                n.produto_desejado AS titulo,
+                CONCAT(
+                    '📢 Necessidade: procura por ',
+                    n.produto_desejado,
+                    ' | Quantidade: ',
+                    COALESCE(n.quantidade, '1'),
+                    ' | Província: ',
+                    n.provincia
+                ) AS conteudo,
+                'necessidade' AS tipo,
+                n.comprador AS "autorNome",
+                'comprador' AS "autorTipo",
+                NULL::TEXT AS imagem,
+                NULL::INTEGER AS "produtoId",
+                n.id AS "precisoId",
+                FALSE AS destaque,
+                n.data
+            FROM precisos n
+
             ORDER BY destaque DESC, data DESC
-            LIMIT 30
+            LIMIT 50
         `);
 
         res.json(resultado.rows);

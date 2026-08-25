@@ -2996,20 +2996,7 @@ async function carregarProdutos() {
 
                 await carregarProdutos();
 
-                const formulario =
-                    document.getElementById(
-                        'formPublicarProduto'
-                    );
-
-                const toggle =
-                    document.getElementById(
-                        'togglePublicarProduto'
-                    );
-
-                if (formulario && toggle) {
-                    formulario.classList.remove('open');
-                    toggle.classList.remove('open');
-                }
+                fecharJanelaServico('janelaPublicarProduto');
 
             } catch (error) {
                 console.error(
@@ -3630,18 +3617,46 @@ async function carregarProdutos() {
         }
 
         function cancelarEdicaoNecessidade() {
-            document.getElementById('necessidadeEditandoId').value = '';
 
-            document.getElementById('formPreciso').reset();
+            const form = document.getElementById('formPreciso');
 
-            document.getElementById('tituloBotaoNecessidade').textContent =
-                '📢 Publicar Necessidade de Compra';
+            if (form) {
+                form.reset();
+            }
 
-            document.getElementById('btnGuardarNecessidade').textContent =
-                'Publicar Necessidade';
+            const id = document.getElementById(
+                'necessidadeEditandoId'
+            );
 
-            document.getElementById('btnCancelarEdicaoNecessidade').style.display =
-                'none';
+            if (id) {
+                id.value = '';
+            }
+
+            const botao = document.getElementById(
+                'btnGuardarNecessidade'
+            );
+
+            if (botao) {
+                botao.textContent = 'Publicar Necessidade';
+            }
+
+            const cancelar = document.getElementById(
+                'btnCancelarEdicaoNecessidade'
+            );
+
+            if (cancelar) {
+                cancelar.style.display = 'none';
+            }
+
+            const titulo = document.getElementById(
+                'tituloBotaoNecessidade'
+            );
+
+            if (titulo) {
+                titulo.textContent = '📢 Publicar Necessidade';
+            }
+
+            fecharJanelaServico('janelaPublicarNecessidade');
         }
 
         async function removerMinhaNecessidade(id) {
@@ -3682,7 +3697,9 @@ async function carregarProdutos() {
                     'Necessidade eliminada com sucesso.'
                 );
 
-                carregarPrecisos();
+                await carregarPrecisos();
+
+                fecharJanelaServico('janelaPublicarNecessidade');
 
             } catch (error) {
                 console.error(
@@ -3915,6 +3932,12 @@ function abrirJanelaServico(id) {
     if (id === "janelaMuralNecessidades") {
         if (typeof carregarPrecisos === "function") {
             carregarPrecisos();
+        }
+    }
+
+    if (id === "janelaFeedStartupAgro") {
+        if (typeof carregarFeedStartupAgro === "function") {
+            carregarFeedStartupAgro();
         }
     }
 
