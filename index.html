@@ -1039,6 +1039,62 @@ body.service-modal-open {
                      FORA DO FEED
                      ============================== -->
 
+                <button
+                    type="button"
+                    id="toggleFeedStartupAgro"
+                    class="service-button"
+                    onclick="abrirJanelaServico('janelaFeedStartupAgro')"
+                    style="margin-top:8px;">
+                    <span>📰 Feed Startup-Agro</span>
+                    <span>›</span>
+                </button>
+
+                <div
+                    id="janelaFeedStartupAgro"
+                    class="service-modal hidden">
+
+                    <div class="service-modal-box">
+
+                        <div class="service-modal-header">
+                            <strong>📰 Feed Startup-Agro</strong>
+
+                            <button
+                                type="button"
+                                class="service-close"
+                                onclick="fecharJanelaServico('janelaFeedStartupAgro')">
+                                ×
+                            </button>
+                        </div>
+
+                        <div class="service-modal-body">
+
+                            <div
+                                id="listaFeedStartupAgro"
+                                style="
+                                    display:flex;
+                                    flex-direction:column;
+                                    gap:8px;
+                                ">
+
+                                <div style="
+                                    padding:10px;
+                                    border:1px solid #e0e0e0;
+                                    border-radius:8px;
+                                    background:#fff;
+                                    color:#777;
+                                    font-size:12px;
+                                    text-align:center;
+                                ">
+                                    📰 A carregar publicações...
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+
                 <div
                     id="publicacoesMercado"
                     style="
@@ -1456,61 +1512,6 @@ body.service-modal-open {
                 <!-- ==============================
                      FEED STARTUP-AGRO
                      ============================== -->
-
-                <button
-                    type="button"
-                    id="toggleFeedStartupAgro"
-                    class="service-button"
-                    onclick="abrirJanelaServico('janelaFeedStartupAgro')"
-                    style="margin-top:8px;">
-                    <span>📰 Feed Startup-Agro</span>
-                    <span>›</span>
-                </button>
-
-                <div
-                    id="janelaFeedStartupAgro"
-                    class="service-modal hidden">
-
-                    <div class="service-modal-box">
-
-                        <div class="service-modal-header">
-                            <strong>📰 Feed Startup-Agro</strong>
-
-                            <button
-                                type="button"
-                                class="service-close"
-                                onclick="fecharJanelaServico('janelaFeedStartupAgro')">
-                                ×
-                            </button>
-                        </div>
-
-                        <div class="service-modal-body">
-
-                            <div
-                                id="listaFeedStartupAgro"
-                                style="
-                                    display:flex;
-                                    flex-direction:column;
-                                    gap:8px;
-                                ">
-
-                                <div style="
-                                    padding:10px;
-                                    border:1px solid #e0e0e0;
-                                    border-radius:8px;
-                                    background:#fff;
-                                    color:#777;
-                                    font-size:12px;
-                                    text-align:center;
-                                ">
-                                    📰 A carregar publicações...
-                                </div>
-
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
 
                 <!-- PAINÉIS MANTIDOS PARA COMPATIBILIDADE -->
                 <div id="painelAgricultor" class="hidden"></div>
