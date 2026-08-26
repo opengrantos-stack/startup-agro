@@ -1230,7 +1230,7 @@ body.service-modal-open {
                             font-size:13px;
                             color:#333;
                         ">
-                            🌱 Publicações do Mercado
+                            📰 Últimas Publicações
                         </strong>
 
                         <span style="
@@ -2891,186 +2891,103 @@ body.service-modal-open {
         // ============================================================
 
         async function carregarPublicacoesMercado() {
+    const container = document.getElementById('listaPublicacoesMercado');
+    if (!container) return;
+    try {
+        const [resFeed, resProdutos, resPrecisos] = await Promise.all([
+            fetch(`${API}/feed-publicacoes`),
+            fetch(`${API}/produtos`),
+            fetch(`${API}/precisos`)
+        ]);
+        const feed = await resFeed.json();
+        const produtos = await resProdutos.json();
+        const precisos = await resPrecisos.json();
 
-            const container =
-                document.getElementById('listaPublicacoesMercado');
-
-            if (!container) return;
-
-            try {
-
-                const [resProdutos, resPrecisos] =
-                    await Promise.all([
-                        fetch(`${API}/produtos`),
-                        fetch(`${API}/precisos`)
-                    ]);
-
-                const produtos =
-                    await resProdutos.json();
-
-                const precisos =
-                    await resPrecisos.json();
-
-                if (
-                    !resProdutos.ok ||
-                    !resPrecisos.ok ||
-                    !Array.isArray(produtos) ||
-                    !Array.isArray(precisos)
-                ) {
-                    throw new Error(
-                        'Erro ao carregar publicações.'
-                    );
-                }
-
-                const publicacoes = [
-
-                    ...produtos.map(p => ({
-                        tipo: 'produto',
-                        data: p.data,
-                        nome: p.produto || 'Produto',
-                        autor: p.vendedor || 'Vendedor',
-                        texto:
-                            `🌾 ${p.produto || 'Produto'} · ${p.quantidade || ''} · ${p.provincia || ''}`,
-                        icone: '🌾'
-                    })),
-
-                    ...precisos.map(n => ({
-                        tipo: 'necessidade',
-                        data: n.data,
-                        nome:
-                            n.produtoDesejado ||
-                            'Necessidade',
-                        autor:
-                            n.comprador ||
-                            'Comprador',
-                        texto:
-                            `📢 Procura ${n.produtoDesejado || 'produto'} · ${n.quantidade || ''} · ${n.provincia || ''}`,
-                        icone: '📢'
-                    }))
-
-                ];
-
-                publicacoes.sort(
-                    (a, b) =>
-                        new Date(b.data || 0) -
-                        new Date(a.data || 0)
-                );
-
-                if (publicacoes.length === 0) {
-
-                    container.innerHTML = `
-                        <div style="
-                            padding:7px;
-                            text-align:center;
-                            font-size:11px;
-                            color:#888;
-                        ">
-                            Ainda não existem publicações.
-                        </div>
-                    `;
-
-                    return;
-                }
-
-                container.innerHTML =
-                    publicacoes.map(p => {
-
-                        const data =
-                            p.data
-                                ? formatarDataPublicacao(p.data)
-                                : '';
-
-                        return `
-                            <div
-                                style="
-                                    display:flex;
-                                    align-items:center;
-                                    gap:7px;
-                                    padding:7px 8px;
-                                    border:1px solid #e5e5e5;
-                                    border-radius:8px;
-                                    background:#fff;
-                                "
-                            >
-
-                                <span style="
-                                    width:22px;
-                                    min-width:22px;
-                                    height:22px;
-                                    display:flex;
-                                    align-items:center;
-                                    justify-content:center;
-                                    border-radius:50%;
-                                    background:#f3f3f3;
-                                    font-size:13px;
-                                ">
-                                    ${p.icone}
-                                </span>
-
-                                <div style="
-                                    min-width:0;
-                                    flex:1;
-                                ">
-
-                                    <div style="
-                                        font-size:12px;
-                                        font-weight:700;
-                                        color:#333;
-                                        overflow:hidden;
-                                        text-overflow:ellipsis;
-                                        white-space:nowrap;
-                                    ">
-                                        ${p.nome}
-                                    </div>
-
-                                    <div style="
-                                        font-size:10px;
-                                        color:#777;
-                                        overflow:hidden;
-                                        text-overflow:ellipsis;
-                                        white-space:nowrap;
-                                    ">
-                                        ${p.texto}
-                                    </div>
-
-                                    <div style="
-                                        margin-top:2px;
-                                        font-size:9px;
-                                        color:#999;
-                                    ">
-                                        ${p.autor}
-                                        ${data ? ` · ${data}` : ''}
-                                    </div>
-
-                                </div>
-
-                            </div>
-                        `;
-
-                    }).join('');
-
-            } catch (error) {
-
-                console.error(
-                    'ERRO AO CARREGAR PUBLICAÇÕES DO MERCADO:',
-                    error
-                );
-
-                container.innerHTML = `
-                    <div style="
-                        padding:7px;
-                        text-align:center;
-                        font-size:11px;
-                        color:#c62828;
-                    ">
-                        Não foi possível carregar as publicações.
-                    </div>
-                `;
-            }
+        if (!resFeed.ok || !resProdutos.ok || !resPrecisos.ok ||
+            !Array.isArray(feed) ||
+            !Array.isArray(produtos) ||
+            !Array.isArray(precisos)) {
+            throw new Error('Erro ao carregar publicações.');
         }
 
+        const publicacoes = [
+            ...feed.map(p => ({
+                tipo: 'feed',
+                data: p.data,
+                nome: p.titulo || 'Publicação',
+                autor: p.autorNome || 'Startup-Agro',
+                texto: p.conteudo || '',
+                icone: p.tipo === 'noticia' ? '📰' :
+                       p.tipo === 'anuncio' ? '📣' :
+                       p.tipo === 'aviso' ? '⚠️' : 'ℹ️'
+            })),
 
-async function carregarProdutos() {
+            ...produtos.map(p => ({
+                tipo: 'produto',
+                data: p.data,
+                nome: p.produto || 'Produto',
+                autor: p.vendedor || 'Vendedor',
+                texto: `🌾 ${p.produto || 'Produto'} · ${p.quantidade || ''} · ${p.provincia || ''}`,
+                icone: '🌾'
+            })),
+
+            ...precisos.map(n => ({
+                tipo: 'necessidade',
+                data: n.data,
+                nome: n.produtoDesejado || 'Necessidade',
+                autor: n.comprador || 'Comprador',
+                texto: `📢 Procura ${n.produtoDesejado || 'produto'} · ${n.quantidade || ''} · ${n.provincia || ''}`,
+                icone: '📢'
+            }))
+        ];
+
+        publicacoes.sort(
+            (a, b) => new Date(b.data || 0) - new Date(a.data || 0)
+        );
+        if (publicacoes.length === 0) {
+            container.innerHTML = `
+                <div style="padding:7px;text-align:center;font-size:11px;color:#888;">
+                    Ainda não existem publicações.
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = publicacoes.map(p => {
+            const data = p.data ? formatarDataPublicacao(p.data) : '';
+
+            return `
+                <div style="display:flex;align-items:center;gap:7px;padding:7px 8px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;">
+                    <span style="width:22px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#f3f3f3;font-size:13px;">
+                        ${p.icone}
+                    </span>
+                    <div style="min-width:0;flex:1;">
+                        <div style="font-size:12px;font-weight:700;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            ${p.nome}
+                        </div>
+                        <div style="font-size:10px;color:#777;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            ${p.texto}
+                        </div>
+                        <div style="margin-top:2px;font-size:9px;color:#999;">
+                            ${p.autor}${data ? ` · ${data}` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('ERRO AO CARREGAR PUBLICAÇÕES:', error);
+        container.innerHTML = `
+            <div style="padding:7px;text-align:center;font-size:11px;color:#c62828;">
+                Não foi possível carregar as publicações.
+            </div>
+        `;
+    }
+}
+
+
+        async function carregarProdutos() {
             const produto = document.getElementById('filtroProduto').value;
             const provincia = document.getElementById('filtroProvincia').value;
             let url = `${API}/produtos?`;
