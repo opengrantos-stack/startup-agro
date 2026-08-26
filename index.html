@@ -2574,6 +2574,7 @@ body.service-modal-open {
                 <p style="
                     color:#777;
                     text-align:center;
+                    font-size:12px;
                 ">
                     ⏳ A carregar publicações...
                 </p>
@@ -2601,152 +2602,310 @@ body.service-modal-open {
                 }
 
                 if (publicacoes.length === 0) {
+
                     container.innerHTML = `
                         <div style="
                             padding:12px;
                             text-align:center;
                             color:#777;
+                            font-size:12px;
                         ">
                             📰 Ainda não existem publicações.
                         </div>
                     `;
+
                     return;
                 }
 
                 container.innerHTML = publicacoes.map(p => {
-
-                    const estadoPublicacao =
-                        p.publica
-                            ? '🟢 Pública'
-                            : '🔒 Privada';
-
-                    const estadoDestaque =
-                        p.destaque
-                            ? '⭐ Destaque'
-                            : '☆ Normal';
 
                     const data =
                         p.data
                             ? formatarDataPublicacao(p.data)
                             : '';
 
+                    const estado =
+                        p.publica
+                            ? '🟢'
+                            : '🔒';
+
+                    const destaque =
+                        p.destaque
+                            ? '⭐'
+                            : '';
+
+                    const resumo =
+                        p.conteudo
+                            ? p.conteudo
+                                .replace(/\s+/g, ' ')
+                                .trim()
+                            : '';
+
+                    const resumoCurto =
+                        resumo.length > 90
+                            ? resumo.substring(0, 90) + '...'
+                            : resumo;
+
                     return `
-                        <div style="
-                            margin-top:10px;
-                            padding:12px;
-                            border:1px solid #ddd;
-                            border-radius:10px;
-                            background:#fff;
-                        ">
-
-                            <strong style="
-                                display:block;
-                                font-size:14px;
+                        <div
+                            id="gestao-feed-${p.id}"
+                            style="
+                                width:100%;
+                                box-sizing:border-box;
                                 margin-bottom:6px;
-                            ">
-                                ${p.titulo || 'Sem título'}
-                            </strong>
-
-                            <div style="
-                                font-size:12px;
-                                color:#666;
-                                margin-bottom:8px;
-                            ">
-                                ${estadoPublicacao}
-                                &nbsp; • &nbsp;
-                                ${estadoDestaque}
-                            </div>
-
-                            <div style="
-                                font-size:12px;
-                                line-height:1.4;
-                                color:#555;
+                                border:1px solid #e0e0e0;
+                                border-radius:8px;
+                                background:#fff;
                                 overflow:hidden;
-                                text-overflow:ellipsis;
-                                display:-webkit-box;
-                                -webkit-line-clamp:2;
-                                -webkit-box-orient:vertical;
-                                overflow-wrap:anywhere;
-                                margin-bottom:8px;
-                            ">
-                                ${
-                                    p.conteudo
-                                        ? p.conteudo.replace(/\\s+/g, ' ').trim()
-                                        : 'Sem conteúdo.'
-                                }
-                            </div>
+                            "
+                        >
 
-                            <div style="
-                                font-size:11px;
-                                color:#888;
-                                margin-bottom:10px;
-                            ">
-                                ${data}
-                            </div>
+                            <!-- LINHA COMPACTA CLICÁVEL -->
+                            <button
+                                type="button"
+                                onclick="abrirPublicacaoGestaoFeed(${p.id})"
+                                style="
+                                    display:block;
+                                    width:100%;
+                                    border:0;
+                                    background:#fff;
+                                    text-align:left;
+                                    padding:9px 10px;
+                                    cursor:pointer;
+                                "
+                            >
 
-                            <div style="
-                                display:flex;
-                                flex-wrap:wrap;
-                                gap:6px;
-                            ">
+                                <div style="
+                                    display:flex;
+                                    align-items:center;
+                                    gap:7px;
+                                    min-width:0;
+                                ">
 
-                                <button
-                                    type="button"
-                                    onclick="editarPublicacaoFeed(${p.id})"
+                                    <span style="
+                                        font-size:16px;
+                                        flex-shrink:0;
+                                    ">
+                                        📰
+                                    </span>
+
+                                    <div style="
+                                        min-width:0;
+                                        flex:1;
+                                    ">
+
+                                        <div style="
+                                            font-size:12px;
+                                            font-weight:700;
+                                            color:#2e7d32;
+                                            overflow:hidden;
+                                            text-overflow:ellipsis;
+                                            white-space:nowrap;
+                                        ">
+                                            ${p.titulo || 'Sem título'}
+                                        </div>
+
+                                        <div style="
+                                            margin-top:2px;
+                                            font-size:10px;
+                                            color:#888;
+                                            overflow:hidden;
+                                            text-overflow:ellipsis;
+                                            white-space:nowrap;
+                                        ">
+                                            ${p.autorNome || 'Startup-Agro'}
+                                            ${data ? ` · ${data}` : ""}
+                                            ${estado}
+                                            ${destaque}
+                                        </div>
+
+                                    </div>
+
+                                    <span
+                                        id="seta-gestao-${p.id}"
+                                        style="
+                                            font-size:16px;
+                                            color:#999;
+                                            flex-shrink:0;
+                                        "
+                                    >
+                                        ›
+                                    </span>
+
+                                </div>
+
+                                <div
+                                    id="resumo-gestao-${p.id}"
                                     style="
-                                        border:0;
-                                        border-radius:7px;
-                                        padding:7px 10px;
-                                        cursor:pointer;
+                                        margin-top:5px;
+                                        padding-left:23px;
+                                        font-size:10px;
+                                        color:#777;
+                                        line-height:1.35;
+                                        overflow:hidden;
+                                        text-overflow:ellipsis;
+                                        white-space:nowrap;
                                     "
                                 >
-                                    ✏️ Editar
-                                </button>
+                                    ${resumoCurto || 'Sem conteúdo.'}
+                                </div>
 
-                                <button
-                                    type="button"
-                                    onclick="alternarPublicacaoFeed(${p.id}, ${!p.publica})"
-                                    style="
-                                        border:0;
-                                        border-radius:7px;
-                                        padding:7px 10px;
-                                        cursor:pointer;
-                                    "
-                                >
-                                    ${p.publica ? '🔒 Tornar privada' : '👁️ Publicar'}
-                                </button>
+                            </button>
 
-                                <button
-                                    type="button"
-                                    onclick="alternarDestaqueFeed(${p.id}, ${!p.destaque})"
-                                    style="
-                                        border:0;
-                                        border-radius:7px;
-                                        padding:7px 10px;
-                                        cursor:pointer;
-                                    "
-                                >
-                                    ${p.destaque ? '☆ Retirar destaque' : '⭐ Destacar'}
-                                </button>
 
-                                <button
-                                    type="button"
-                                    onclick="eliminarPublicacaoFeed(${p.id})"
-                                    style="
-                                        border:0;
-                                        border-radius:7px;
-                                        padding:7px 10px;
-                                        cursor:pointer;
-                                        color:#c62828;
-                                    "
-                                >
-                                    🗑️ Eliminar
-                                </button>
+                            <!-- DETALHES ESCONDIDOS -->
+                            <div
+                                id="detalhes-gestao-${p.id}"
+                                style="
+                                    display:none;
+                                    padding:0 10px 10px 10px;
+                                "
+                            >
+
+                                <div style="
+                                    border-top:1px solid #eee;
+                                    padding-top:10px;
+                                ">
+
+                                    ${
+                                        p.imagem
+                                            ? `
+                                                <img
+                                                    src="${p.imagem}"
+                                                    alt="${p.titulo || 'Imagem da publicação'}"
+                                                    style="
+                                                        display:block;
+                                                        width:100%;
+                                                        max-height:260px;
+                                                        object-fit:cover;
+                                                        border-radius:8px;
+                                                        margin-bottom:10px;
+                                                    "
+                                                >
+                                              `
+                                            : ''
+                                    }
+
+                                    <div style="
+                                        font-size:18px;
+                                        font-weight:700;
+                                        color:#2e7d32;
+                                        line-height:1.3;
+                                        margin-bottom:6px;
+                                    ">
+                                        ${p.titulo || 'Sem título'}
+                                    </div>
+
+                                    <div style="
+                                        font-size:10px;
+                                        color:#888;
+                                        margin-bottom:10px;
+                                    ">
+                                        ${p.autorNome || 'Startup-Agro'}
+                                        ${data ? ` · ${data}` : ""}
+                                        ${p.publica ? ' · 🟢 Pública' : ' · 🔒 Privada'}
+                                        ${p.destaque ? ' · ⭐ Destaque' : ''}
+                                    </div>
+
+                                    <div style="
+                                        font-size:13px;
+                                        color:#333;
+                                        line-height:1.6;
+                                        white-space:pre-wrap;
+                                        overflow-wrap:anywhere;
+                                        margin-bottom:12px;
+                                    ">
+                                        ${p.conteudo || 'Sem conteúdo.'}
+                                    </div>
+
+
+                                    <!-- CONTROLOS -->
+                                    <div style="
+                                        display:flex;
+                                        align-items:center;
+                                        gap:5px;
+                                        overflow-x:auto;
+                                        padding:2px 0;
+                                    ">
+
+                                        <button
+                                            type="button"
+                                            onclick="editarPublicacaoFeed(${p.id}); event.stopPropagation();"
+                                            title="Editar"
+                                            style="
+                                                flex:0 0 auto;
+                                                border:1px solid #ddd;
+                                                border-radius:6px;
+                                                padding:6px 8px;
+                                                background:#fff;
+                                                font-size:12px;
+                                                cursor:pointer;
+                                            "
+                                        >
+                                            ✏️
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onclick="alternarPublicacaoFeed(${p.id}, ${!p.publica}); event.stopPropagation();"
+                                            title="${p.publica ? 'Trancar publicação' : 'Publicar'}"
+                                            style="
+                                                flex:0 0 auto;
+                                                border:1px solid #ddd;
+                                                border-radius:6px;
+                                                padding:6px 8px;
+                                                background:#fff;
+                                                font-size:12px;
+                                                cursor:pointer;
+                                            "
+                                        >
+                                            ${p.publica ? '🔒' : '👁️'}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onclick="alternarDestaqueFeed(${p.id}, ${!p.destaque}); event.stopPropagation();"
+                                            title="${p.destaque ? 'Retirar destaque' : 'Destacar'}"
+                                            style="
+                                                flex:0 0 auto;
+                                                border:1px solid #ddd;
+                                                border-radius:6px;
+                                                padding:6px 8px;
+                                                background:#fff;
+                                                font-size:12px;
+                                                cursor:pointer;
+                                            "
+                                        >
+                                            ${p.destaque ? '☆' : '⭐'}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onclick="eliminarPublicacaoFeed(${p.id}); event.stopPropagation();"
+                                            title="Eliminar"
+                                            style="
+                                                flex:0 0 auto;
+                                                border:1px solid #ddd;
+                                                border-radius:6px;
+                                                padding:6px 8px;
+                                                background:#fff;
+                                                color:#c62828;
+                                                font-size:12px;
+                                                cursor:pointer;
+                                            "
+                                        >
+                                            🗑️
+                                        </button>
+
+                                    </div>
+
+                                </div>
 
                             </div>
 
                         </div>
                     `;
+
                 }).join('');
 
             } catch (error) {
@@ -2760,10 +2919,66 @@ body.service-modal-open {
                     <div style="
                         color:#c62828;
                         padding:10px;
+                        font-size:12px;
                     ">
                         ❌ ${error.message || 'Erro ao carregar gestão do Feed.'}
                     </div>
                 `;
+            }
+        }
+
+
+        function abrirPublicacaoGestaoFeed(id) {
+
+            const detalhes =
+                document.getElementById(
+                    `detalhes-gestao-${id}`
+                );
+
+            const resumo =
+                document.getElementById(
+                    `resumo-gestao-${id}`
+                );
+
+            const seta =
+                document.getElementById(
+                    `seta-gestao-${id}`
+                );
+
+            if (!detalhes) {
+                console.error(
+                    'Detalhes da publicação não encontrados:',
+                    id
+                );
+                return;
+            }
+
+            const estaAberta =
+                detalhes.style.display === 'block';
+
+            if (estaAberta) {
+
+                detalhes.style.display = 'none';
+
+                if (resumo) {
+                    resumo.style.display = 'block';
+                }
+
+                if (seta) {
+                    seta.textContent = '›';
+                }
+
+            } else {
+
+                detalhes.style.display = 'block';
+
+                if (resumo) {
+                    resumo.style.display = 'none';
+                }
+
+                if (seta) {
+                    seta.textContent = '⌄';
+                }
             }
         }
 
