@@ -2726,46 +2726,205 @@ body.service-modal-open {
         }
 
 
-        function abrirPublicacaoFeed(id) {
-    const lista = document.getElementById("listaFeedStartupAgro");
-    const visualizacao = document.getElementById("visualizacaoPublicacaoFeed");
+        async function abrirPublicacaoFeed(id) {
+
+    const lista =
+        document.getElementById("listaFeedStartupAgro");
+
+    const visualizacao =
+        document.getElementById("visualizacaoPublicacaoFeed");
 
     if (!lista || !visualizacao) return;
 
-    const artigo = document.querySelector(`[data-feed-id="${id}"]`);
+    try {
 
-    if (!artigo) return;
+        /*
+         * Sempre abrir o Feed como uma sala.
+         * Se já estiver aberto, apenas continua normalmente.
+         */
+        abrirJanelaServico("janelaFeedStartupAgro");
 
-    lista.style.display = "none";
-    visualizacao.style.display = "block";
+        const res =
+            await fetch(`${API}/feed-publicacoes`);
 
-    visualizacao.innerHTML = `
-        <button
-            type="button"
-            onclick="voltarAoFeedStartupAgro()"
-            style="
-                border:none;
-                background:none;
-                color:#2e7d32;
+        const publicacoes =
+            await res.json();
+
+        if (!res.ok || !Array.isArray(publicacoes)) {
+            throw new Error("Erro ao carregar publicação.");
+        }
+
+        const publicacao =
+            publicacoes.find(
+                p => String(p.id) === String(id)
+            );
+
+        if (!publicacao) {
+            throw new Error("Publicação não encontrada.");
+        }
+
+        const titulo =
+            publicacao.titulo || "Publicação";
+
+        const conteudo =
+            publicacao.conteudo || "";
+
+        const autor =
+            publicacao.autorNome || "Startup-Agro";
+
+        const tipo =
+            publicacao.tipo || "informacao";
+
+        const data =
+            publicacao.data
+                ? formatarDataPublicacao(publicacao.data)
+                : "";
+
+        const imagem =
+            publicacao.imagem
+                ? `
+                    <img
+                        src="${publicacao.imagem}"
+                        alt="${titulo}"
+                        style="
+                            display:block;
+                            width:100%;
+                            max-height:420px;
+                            object-fit:cover;
+                            border-radius:10px;
+                            margin-bottom:15px;
+                        "
+                    >
+                  `
+                : "";
+
+        const destaque =
+            publicacao.destaque
+                ? `
+                    <div style="
+                        margin-top:15px;
+                        padding:8px 10px;
+                        border-radius:7px;
+                        background:#f1f8f2;
+                        font-size:11px;
+                        font-weight:700;
+                        color:#2e7d32;
+                    ">
+                        ⭐ Publicação em destaque
+                    </div>
+                  `
+                : "";
+
+        lista.style.display = "none";
+        visualizacao.style.display = "block";
+
+        visualizacao.innerHTML = `
+
+            <button
+                type="button"
+                onclick="voltarAoFeedStartupAgro()"
+                style="
+                    display:block;
+                    border:none;
+                    background:none;
+                    color:#2e7d32;
+                    font-size:13px;
+                    font-weight:700;
+                    padding:8px 0;
+                    margin:0 0 10px 0;
+                    cursor:pointer;
+                "
+            >
+                ← Voltar ao Feed
+            </button>
+
+            <article style="
+                width:100%;
+                box-sizing:border-box;
+                background:#fff;
+                border:1px solid #e0e0e0;
+                border-radius:10px;
+                padding:15px;
+            ">
+
+                ${imagem}
+
+                <div style="
+                    font-size:21px;
+                    font-weight:700;
+                    color:#2e7d32;
+                    line-height:1.35;
+                    margin-bottom:8px;
+                ">
+                    ${titulo}
+                </div>
+
+                <div style="
+                    font-size:11px;
+                    color:#777;
+                    margin-bottom:18px;
+                ">
+                    ${autor}
+                    ${data ? ` · ${data}` : ""}
+                    ${tipo ? ` · ${tipo}` : ""}
+                </div>
+
+                <div style="
+                    font-size:14px;
+                    color:#333;
+                    line-height:1.75;
+                    white-space:pre-wrap;
+                    word-break:break-word;
+                ">
+                    ${conteudo}
+                </div>
+
+                ${destaque}
+
+            </article>
+        `;
+
+    } catch (error) {
+
+        console.error(
+            "ERRO AO ABRIR PUBLICAÇÃO:",
+            error
+        );
+
+        lista.style.display = "none";
+        visualizacao.style.display = "block";
+
+        visualizacao.innerHTML = `
+
+            <button
+                type="button"
+                onclick="voltarAoFeedStartupAgro()"
+                style="
+                    border:none;
+                    background:none;
+                    color:#2e7d32;
+                    font-size:13px;
+                    font-weight:700;
+                    padding:8px 0;
+                    margin-bottom:10px;
+                    cursor:pointer;
+                "
+            >
+                ← Voltar ao Feed
+            </button>
+
+            <div style="
+                padding:15px;
+                background:#fff;
+                border:1px solid #e0e0e0;
+                border-radius:10px;
+                color:#c62828;
                 font-size:13px;
-                font-weight:700;
-                padding:8px 0;
-                margin-bottom:8px;
-                cursor:pointer;
-            "
-        >
-            ← Voltar ao Feed
-        </button>
-
-        <div style="
-            background:#fff;
-            border:1px solid #e0e0e0;
-            border-radius:10px;
-            padding:15px;
-        ">
-            ${artigo.innerHTML}
-        </div>
-    `;
+            ">
+                Não foi possível abrir esta publicação.
+            </div>
+        `;
+    }
 }
 
         function voltarAoFeedStartupAgro() {
