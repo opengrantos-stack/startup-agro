@@ -4577,23 +4577,33 @@ function atualizarAcessoAdministrador() {
     const botao =
         document.getElementById("btnGerirFeed");
 
-    if (!botao) {
-        return;
-    }
+    const areaPublicar =
+        document.getElementById("areaPublicarFeedAdmin");
 
     const u = utilizadorAtual || {};
 
     const administrador =
+        u.ehAdministrador === true ||
         u.admin === true ||
         u.isAdmin === true ||
         u.role === "admin" ||
         u.tipo === "admin" ||
         u.perfil === "admin";
 
-    if (administrador) {
-        botao.classList.remove("hidden");
-    } else {
-        botao.classList.add("hidden");
+    if (botao) {
+        if (administrador) {
+            botao.classList.remove("hidden");
+        } else {
+            botao.classList.add("hidden");
+        }
+    }
+
+    if (areaPublicar) {
+        if (administrador) {
+            areaPublicar.classList.remove("hidden");
+        } else {
+            areaPublicar.classList.add("hidden");
+        }
     }
 }
 
