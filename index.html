@@ -2820,28 +2820,16 @@ body.service-modal-open {
                             "
                         >
 
-                            ${imagem}
-
-                            <div
-                                style="
-                                    font-size:14px;
-                                    font-weight:700;
-                                    color:#2e7d32;
-                                    margin-bottom:5px;
-                                "
-                            >
-                                ${titulo}
-                            </div>
-
-                            <div
-                                style="
-                                    font-size:12px;
-                                    color:#555;
-                                    line-height:1.5;
-                                    white-space:pre-wrap;
-                                "
-                            >
-                                ${conteudo}
+                            <div style="display:flex;align-items:center;gap:7px;">
+                                <span style="font-size:16px;">📰</span>
+                                <div style="min-width:0;flex:1;">
+                                    <div style="font-size:12px;font-weight:700;color:#2e7d32;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                        ${titulo}
+                                    </div>
+                                    <div style="font-size:10px;color:#777;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                        ${autor}${data ? ` · ${data}` : ""}
+                                    </div>
+                                </div>
                             </div>
 
                             <div
@@ -2928,6 +2916,7 @@ body.service-modal-open {
         const publicacoes = [
             ...feed.map(p => ({
                 tipo: 'feed',
+                id: p.id,
                 data: p.data,
                 nome: p.titulo || 'Publicação',
                 autor: p.autorNome || 'Startup-Agro',
@@ -2972,7 +2961,7 @@ body.service-modal-open {
             const data = p.data ? formatarDataPublicacao(p.data) : '';
 
             return `
-                <div style="display:flex;align-items:center;gap:7px;padding:7px 8px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;">
+                <div onclick="${p.tipo === 'feed' ? `abrirPublicacaoFeed(${p.id})` : ''}" style="display:flex;align-items:center;gap:7px;padding:7px 8px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;${p.tipo === 'feed' ? 'cursor:pointer;' : ''}">
                     <span style="width:22px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#f3f3f3;font-size:13px;">
                         ${p.icone}
                     </span>
