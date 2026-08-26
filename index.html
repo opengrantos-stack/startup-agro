@@ -4399,6 +4399,12 @@ function abrirJanelaServico(id) {
         }
     }
 
+    if (id === "janelaFeedStartupAgro") {
+        if (typeof carregarFeedStartupAgro === "function") {
+            carregarFeedStartupAgro();
+        }
+    }
+
     if (id === "janelaPublicarProduto") {
         const campo = document.getElementById("produtoNome");
         if (campo) {
