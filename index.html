@@ -1068,6 +1068,118 @@ body.service-modal-open {
 
                         <div class="service-modal-body">
 
+                            <!-- ==============================
+                                 PUBLICAR NO FEED
+                                 APENAS ADMINISTRADOR
+                                 ============================== -->
+
+                            <div
+                                id="areaPublicarFeedAdmin"
+                                class="admin-only hidden"
+                                style="
+                                    margin-bottom:12px;
+                                    padding:10px;
+                                    border:1px solid #e0e0e0;
+                                    border-radius:9px;
+                                    background:#fafafa;
+                                "
+                            >
+
+                                <strong style="
+                                    display:block;
+                                    margin-bottom:8px;
+                                    font-size:13px;
+                                    color:#333;
+                                ">
+                                    ✏️ Publicar no Feed
+                                </strong>
+
+                                <form onsubmit="publicarNoFeed(event)">
+
+                                    <input
+                                        type="text"
+                                        id="feedTitulo"
+                                        placeholder="Título da publicação"
+                                        maxlength="150"
+                                        required
+                                    >
+
+                                    <textarea
+                                        id="feedConteudo"
+                                        placeholder="Escreva o conteúdo da publicação..."
+                                        rows="5"
+                                        maxlength="3000"
+                                        required
+                                        style="
+                                            width:100%;
+                                            box-sizing:border-box;
+                                            resize:vertical;
+                                        "
+                                    ></textarea>
+
+                                    <select
+                                        id="feedTipo"
+                                        style="width:100%;"
+                                    >
+                                        <option value="informacao">
+                                            Informação
+                                        </option>
+
+                                        <option value="anuncio">
+                                            Anúncio
+                                        </option>
+
+                                        <option value="noticia">
+                                            Notícia
+                                        </option>
+
+                                        <option value="aviso">
+                                            Aviso
+                                        </option>
+                                    </select>
+
+                                    <input
+                                        type="url"
+                                        id="feedImagem"
+                                        placeholder="URL da imagem (opcional)"
+                                    >
+
+                                    <label style="
+                                        display:flex;
+                                        align-items:center;
+                                        gap:7px;
+                                        margin:8px 0;
+                                        font-size:12px;
+                                        color:#555;
+                                    ">
+                                        <input
+                                            type="checkbox"
+                                            id="feedDestaque"
+                                        >
+                                        Publicação em destaque
+                                    </label>
+
+                                    <button
+                                        type="submit"
+                                        id="btnPublicarFeed"
+                                        class="service-button"
+                                    >
+                                        📰 Publicar no Feed
+                                    </button>
+
+                                </form>
+
+                                <p
+                                    id="mensagemPublicarFeed"
+                                    style="
+                                        margin:8px 0 0;
+                                        font-size:11px;
+                                        text-align:center;
+                                    "
+                                ></p>
+
+                            </div>
+
                             <div
                                 id="listaFeedStartupAgro"
                                 style="
@@ -2045,6 +2157,128 @@ body.service-modal-open {
                 minute: '2-digit'
             });
         }
+
+        // ============================================================
+        // PUBLICAR NO FEED COMO ADMINISTRADOR
+        // ============================================================
+
+        async function publicarNoFeed(event) {
+
+            event.preventDefault();
+
+            if (!utilizadorAtual || !utilizadorAtual.ehAdministrador) {
+
+                alert(
+                    'Apenas o administrador pode publicar no Feed.'
+                );
+
+                return;
+            }
+
+            const titulo =
+                document.getElementById('feedTitulo').value.trim();
+
+            const conteudo =
+                document.getElementById('feedConteudo').value.trim();
+
+            const tipo =
+                document.getElementById('feedTipo').value;
+
+            const imagem =
+                document.getElementById('feedImagem').value.trim();
+
+            const destaque =
+                document.getElementById('feedDestaque').checked;
+
+            const mensagem =
+                document.getElementById('mensagemPublicarFeed');
+
+            const botao =
+                document.getElementById('btnPublicarFeed');
+
+            if (!titulo || !conteudo) {
+
+                mensagem.textContent =
+                    'Preencha o título e o conteúdo.';
+
+                mensagem.style.color = '#c62828';
+
+                return;
+            }
+
+            botao.disabled = true;
+            botao.textContent = '⏳ A publicar...';
+
+            mensagem.textContent = '';
+
+            try {
+
+                const res = await fetch(
+                    `${API}/admin/feed-publicacoes`,
+                    {
+                        method: 'POST',
+
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-owner-token':
+                                utilizadorAtual.ownerToken
+                        },
+
+                        body: JSON.stringify({
+                            titulo,
+                            conteudo,
+                            tipo,
+                            imagem: imagem || null,
+                            destaque
+                        })
+                    }
+                );
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+
+                    throw new Error(
+                        dados.erro ||
+                        'Não foi possível publicar no Feed.'
+                    );
+                }
+
+                mensagem.textContent =
+                    dados.mensagem ||
+                    'Publicação criada com sucesso.';
+
+                mensagem.style.color = '#2e7d32';
+
+                document.getElementById('feedTitulo').value = '';
+                document.getElementById('feedConteudo').value = '';
+                document.getElementById('feedImagem').value = '';
+                document.getElementById('feedTipo').value = 'informacao';
+                document.getElementById('feedDestaque').checked = false;
+
+                await carregarFeedStartupAgro();
+
+            } catch (error) {
+
+                console.error(
+                    'ERRO AO PUBLICAR NO FEED:',
+                    error
+                );
+
+                mensagem.textContent =
+                    error.message ||
+                    'Erro ao publicar no Feed.';
+
+                mensagem.style.color = '#c62828';
+
+            } finally {
+
+                botao.disabled = false;
+                botao.textContent = '📰 Publicar no Feed';
+            }
+        }
+
+
         // ============================================================
         // FEED STARTUP-AGRO
         // Funcionalidade independente
