@@ -2820,13 +2820,21 @@ body.service-modal-open {
 
 
                                     <!-- CONTROLOS -->
-                                    <div style="
-                                        display:flex;
-                                        align-items:center;
-                                        gap:5px;
-                                        overflow-x:auto;
-                                        padding:2px 0;
-                                    ">
+                                    <div
+                                        data-controlos-feed="true"
+                                        style="
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:flex-start;
+                                            gap:6px;
+                                            width:max-content;
+                                            max-width:100%;
+                                            overflow-x:auto;
+                                            padding:4px 0;
+                                            visibility:visible;
+                                            opacity:1;
+                                        "
+                                    >
 
                                         <button
                                             type="button"
@@ -2971,6 +2979,8 @@ body.service-modal-open {
             } else {
 
                 detalhes.style.display = 'block';
+                detalhes.style.visibility = 'visible';
+                detalhes.style.opacity = '1';
 
                 if (resumo) {
                     resumo.style.display = 'none';
@@ -2978,6 +2988,17 @@ body.service-modal-open {
 
                 if (seta) {
                     seta.textContent = '⌄';
+                }
+
+                // Garantir que os controlos administrativos
+                // aparecem quando a publicação é aberta.
+                const controlos =
+                    detalhes.querySelector('[data-controlos-feed]');
+
+                if (controlos) {
+                    controlos.style.display = 'flex';
+                    controlos.style.visibility = 'visible';
+                    controlos.style.opacity = '1';
                 }
             }
         }
