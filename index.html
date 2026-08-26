@@ -1070,11 +1070,91 @@ body.service-modal-open {
                                         </option>
                                     </select>
 
-                                    <input
-                                        type="url"
-                                        id="feedImagem"
-                                        placeholder="URL da imagem (opcional)"
-                                    >
+                                    <div style="
+                                        margin:8px 0;
+                                        padding:10px;
+                                        border:1px solid #e0e0e0;
+                                        border-radius:8px;
+                                        background:#fafafa;
+                                    ">
+
+                                        <div style="
+                                            font-size:12px;
+                                            font-weight:700;
+                                            color:#555;
+                                            margin-bottom:7px;
+                                        ">
+                                            📷 Imagem da publicação
+                                        </div>
+
+                                        <div style="
+                                            display:flex;
+                                            flex-wrap:wrap;
+                                            gap:7px;
+                                        ">
+
+                                            <label
+                                                for="feedImagemArquivo"
+                                                style="
+                                                    display:inline-block;
+                                                    padding:8px 10px;
+                                                    border-radius:7px;
+                                                    background:#fff;
+                                                    border:1px solid #ccc;
+                                                    color:#333;
+                                                    font-size:12px;
+                                                    font-weight:700;
+                                                    cursor:pointer;
+                                                "
+                                            >
+                                                📁 Carregar foto
+                                            </label>
+
+                                            <input
+                                                type="file"
+                                                id="feedImagemArquivo"
+                                                accept="image/*"
+                                                onchange="previsualizarImagemFeed(event)"
+                                                style="display:none;"
+                                            >
+
+                                            <label
+                                                for="feedImagemCamera"
+                                                style="
+                                                    display:inline-block;
+                                                    padding:8px 10px;
+                                                    border-radius:7px;
+                                                    background:#fff;
+                                                    border:1px solid #ccc;
+                                                    color:#333;
+                                                    font-size:12px;
+                                                    font-weight:700;
+                                                    cursor:pointer;
+                                                "
+                                            >
+                                                📸 Tirar foto
+                                            </label>
+
+                                            <input
+                                                type="file"
+                                                id="feedImagemCamera"
+                                                accept="image/*"
+                                                capture="environment"
+                                                onchange="previsualizarImagemFeed(event)"
+                                                style="display:none;"
+                                            >
+
+                                        </div>
+
+                                        <div
+                                            id="previewImagemFeed"
+                                            style="
+                                                display:none;
+                                                margin-top:8px;
+                                            "
+                                        ></div>
+
+                                    </div>
 
                                     <label style="
                                         display:flex;
@@ -2208,6 +2288,111 @@ body.service-modal-open {
         // PUBLICAR NO FEED COMO ADMINISTRADOR
         // ============================================================
 
+        function previsualizarImagemFeed(event) {
+
+            const arquivo =
+                event.target.files && event.target.files[0];
+
+            const preview =
+                document.getElementById('previewImagemFeed');
+
+            const outroInput =
+                event.target.id === 'feedImagemArquivo'
+                    ? document.getElementById('feedImagemCamera')
+                    : document.getElementById('feedImagemArquivo');
+
+            if (!preview || !arquivo) return;
+
+            if (!arquivo.type.startsWith('image/')) {
+
+                preview.innerHTML =
+                    '<div style="color:#c62828;font-size:11px;">Selecione uma imagem válida.</div>';
+
+                preview.style.display = 'block';
+
+                return;
+            }
+
+            // Se o utilizador escolheu uma origem,
+            // limpar a outra para evitar dois ficheiros.
+            if (outroInput) {
+                outroInput.value = '';
+            }
+
+            const leitor = new FileReader();
+
+            leitor.onload = function(e) {
+
+                preview.innerHTML = `
+                    <div style="
+                        position:relative;
+                        display:inline-block;
+                        max-width:100%;
+                    ">
+
+                        <img
+                            src="${e.target.result}"
+                            alt="Pré-visualização"
+                            style="
+                                display:block;
+                                width:100%;
+                                max-width:320px;
+                                max-height:220px;
+                                object-fit:cover;
+                                border-radius:8px;
+                                border:1px solid #ddd;
+                            "
+                        >
+
+                        <button
+                            type="button"
+                            onclick="removerImagemFeed()"
+                            style="
+                                margin-top:6px;
+                                border:0;
+                                border-radius:7px;
+                                padding:6px 9px;
+                                background:#fff;
+                                color:#c62828;
+                                font-size:11px;
+                                font-weight:700;
+                                cursor:pointer;
+                            "
+                        >
+                            ✕ Remover foto
+                        </button>
+
+                    </div>
+                `;
+
+                preview.style.display = 'block';
+            };
+
+            leitor.readAsDataURL(arquivo);
+        }
+
+
+        function removerImagemFeed() {
+
+            const arquivo =
+                document.getElementById('feedImagemArquivo');
+
+            const camera =
+                document.getElementById('feedImagemCamera');
+
+            const preview =
+                document.getElementById('previewImagemFeed');
+
+            if (arquivo) arquivo.value = '';
+            if (camera) camera.value = '';
+
+            if (preview) {
+                preview.innerHTML = '';
+                preview.style.display = 'none';
+            }
+        }
+
+
         async function publicarNoFeed(event) {
 
             event.preventDefault();
@@ -2229,9 +2414,6 @@ body.service-modal-open {
 
             const tipo =
                 document.getElementById('feedTipo').value;
-
-            const imagem =
-                document.getElementById('feedImagem').value.trim();
 
             const destaque =
                 document.getElementById('feedDestaque').checked;
@@ -2265,18 +2447,63 @@ body.service-modal-open {
                         method: 'POST',
 
                         headers: {
-                            'Content-Type': 'application/json',
                             'x-owner-token':
                                 utilizadorAtual.ownerToken
                         },
 
-                        body: JSON.stringify({
-                            titulo,
-                            conteudo,
-                            tipo,
-                            imagem: imagem || null,
-                            destaque
-                        })
+                        body: (() => {
+
+                            const dados =
+                                new FormData();
+
+                            dados.append(
+                                'titulo',
+                                titulo
+                            );
+
+                            dados.append(
+                                'conteudo',
+                                conteudo
+                            );
+
+                            dados.append(
+                                'tipo',
+                                tipo
+                            );
+
+                            dados.append(
+                                'destaque',
+                                destaque ? 'true' : 'false'
+                            );
+
+                            const arquivo =
+                                document.getElementById(
+                                    'feedImagemArquivo'
+                                );
+
+                            const camera =
+                                document.getElementById(
+                                    'feedImagemCamera'
+                                );
+
+                            const ficheiro =
+                                (arquivo && arquivo.files[0])
+                                    ? arquivo.files[0]
+                                    : (
+                                        camera && camera.files[0]
+                                            ? camera.files[0]
+                                            : null
+                                    );
+
+                            if (ficheiro) {
+                                dados.append(
+                                    'imagem',
+                                    ficheiro
+                                );
+                            }
+
+                            return dados;
+                        })()
                     }
                 );
 
@@ -2298,7 +2525,8 @@ body.service-modal-open {
 
                 document.getElementById('feedTitulo').value = '';
                 document.getElementById('feedConteudo').value = '';
-                document.getElementById('feedImagem').value = '';
+                removerImagemFeed();
+
                 document.getElementById('feedTipo').value = 'informacao';
                 document.getElementById('feedDestaque').checked = false;
 
@@ -2430,13 +2658,22 @@ body.service-modal-open {
                             </div>
 
                             <div style="
-                                font-size:13px;
-                                line-height:1.5;
-                                white-space:pre-wrap;
+                                font-size:12px;
+                                line-height:1.4;
+                                color:#555;
+                                overflow:hidden;
+                                text-overflow:ellipsis;
+                                display:-webkit-box;
+                                -webkit-line-clamp:2;
+                                -webkit-box-orient:vertical;
                                 overflow-wrap:anywhere;
                                 margin-bottom:8px;
                             ">
-                                ${p.conteudo || ''}
+                                ${
+                                    p.conteudo
+                                        ? p.conteudo.replace(/\\s+/g, ' ').trim()
+                                        : 'Sem conteúdo.'
+                                }
                             </div>
 
                             <div style="

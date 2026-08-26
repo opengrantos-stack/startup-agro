@@ -2013,7 +2013,7 @@ app.put('/admin/feed-publicacoes/:id/publicar', async (req, res) => {
 // PUBLICAÇÃO DO ADMINISTRADOR
 // ============================================================
 
-app.post('/admin/feed-publicacoes', async (req, res) => {
+app.post('/admin/feed-publicacoes', upload.single('imagem'), async (req, res) => {
     try {
 
         const ownerToken =
@@ -2032,11 +2032,45 @@ app.post('/admin/feed-publicacoes', async (req, res) => {
             titulo,
             conteudo,
             tipo,
-            imagem,
             produtoId,
             precisoId,
             destaque
         } = req.body;
+
+        let imagem = null;
+
+        if (req.file) {
+
+            const nomeArquivo =
+                `feed-${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+
+            const { error: uploadError } =
+                await supabase.storage
+                    .from('Produtos')
+                    .upload(nomeArquivo, req.file.buffer, {
+                        contentType: req.file.mimetype,
+                        upsert: false
+                    });
+
+            if (uploadError) {
+
+                console.error(
+                    'ERRO SUPABASE UPLOAD DO FEED:',
+                    uploadError.message
+                );
+
+                return res.status(500).json({
+                    erro: 'Erro ao enviar a imagem da publicação.'
+                });
+            }
+
+            const { data: urlData } =
+                supabase.storage
+                    .from('Produtos')
+                    .getPublicUrl(nomeArquivo);
+
+            imagem = urlData.publicUrl;
+        }
 
         if (!titulo || !conteudo) {
             return res.status(400).json({
