@@ -961,113 +961,6 @@ body.service-modal-open {
                                 "
                             >
 
-                                <strong>
-                                    📰 Publicações recentes
-                                </strong>
-
-                                <div
-                                    id="listaGestaoFeed"
-                                    style="margin-top:10px;"
-                                >
-                                    <p style="
-                                        color:#777;
-                                        text-align:center;
-                                    ">
-                                        A carregar...
-                                    </p>
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <!-- ==============================
-                     BOTÕES PRINCIPAIS
-                     ============================== -->
-
-                <div id="botoesServicos" style="
-                    display:flex;
-                    flex-direction:column;
-                    gap:7px;
-                    width:100%;
-                ">
-
-                    <button
-                        type="button"
-                        id="togglePublicarProduto"
-                        class="service-button"
-                        onclick="abrirJanelaServico('janelaPublicarProduto')">
-                        <span>🌾 Publicar Produto</span>
-                        <span>›</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        id="toggleMercadoPrincipal"
-                        class="service-button"
-                        onclick="abrirJanelaServico('janelaMercado')">
-                        <span>🛒 Produtos Disponíveis no Mercado</span>
-                        <span>›</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        id="togglePublicarNecessidade"
-                        class="service-button"
-                        onclick="abrirJanelaServico('janelaPublicarNecessidade')">
-                        <span>📢 Publicar Necessidade</span>
-                        <span>›</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        id="toggleMuralNecessidades"
-                        class="service-button"
-                        onclick="abrirJanelaServico('janelaMuralNecessidades')">
-                        <span>📋 Mural de Necessidades</span>
-                        <span>›</span>
-                    </button>
-
-                </div>
-
-                <!-- ==============================
-                     PUBLICAÇÕES DO MERCADO
-                     FORA DO FEED
-                     ============================== -->
-
-                <button
-                    type="button"
-                    id="toggleFeedStartupAgro"
-                    class="service-button"
-                    onclick="abrirJanelaServico('janelaFeedStartupAgro')"
-                    style="margin-top:8px;">
-                    <span>📰 Feed Startup-Agro</span>
-                    <span>›</span>
-                </button>
-
-                <div
-                    id="janelaFeedStartupAgro"
-                    class="service-modal hidden">
-
-                    <div class="service-modal-box">
-
-                        <div class="service-modal-header">
-                            <strong>📰 Feed Startup-Agro</strong>
-
-                            <button
-                                type="button"
-                                class="service-close"
-                                onclick="fecharJanelaServico('janelaFeedStartupAgro')">
-                                ×
-                            </button>
-                        </div>
-
-                        <div class="service-modal-body">
-
                             <!-- ==============================
                                  PUBLICAR NO FEED
                                  APENAS ADMINISTRADOR
@@ -1179,6 +1072,114 @@ body.service-modal-open {
                                 ></p>
 
                             </div>
+
+
+                                <strong>
+                                    📰 Publicações recentes
+                                </strong>
+
+                                <div
+                                    id="listaGestaoFeed"
+                                    style="margin-top:10px;"
+                                >
+                                    <p style="
+                                        color:#777;
+                                        text-align:center;
+                                    ">
+                                        A carregar...
+                                    </p>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- ==============================
+                     BOTÕES PRINCIPAIS
+                     ============================== -->
+
+                <div id="botoesServicos" style="
+                    display:flex;
+                    flex-direction:column;
+                    gap:7px;
+                    width:100%;
+                ">
+
+                    <button
+                        type="button"
+                        id="togglePublicarProduto"
+                        class="service-button"
+                        onclick="abrirJanelaServico('janelaPublicarProduto')">
+                        <span>🌾 Publicar Produto</span>
+                        <span>›</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        id="toggleMercadoPrincipal"
+                        class="service-button"
+                        onclick="abrirJanelaServico('janelaMercado')">
+                        <span>🛒 Produtos Disponíveis no Mercado</span>
+                        <span>›</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        id="togglePublicarNecessidade"
+                        class="service-button"
+                        onclick="abrirJanelaServico('janelaPublicarNecessidade')">
+                        <span>📢 Publicar Necessidade</span>
+                        <span>›</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        id="toggleMuralNecessidades"
+                        class="service-button"
+                        onclick="abrirJanelaServico('janelaMuralNecessidades')">
+                        <span>📋 Mural de Necessidades</span>
+                        <span>›</span>
+                    </button>
+
+                </div>
+
+                <!-- ==============================
+                     PUBLICAÇÕES DO MERCADO
+                     FORA DO FEED
+                     ============================== -->
+
+                <button
+                    type="button"
+                    id="toggleFeedStartupAgro"
+                    class="service-button"
+                    onclick="abrirJanelaServico('janelaFeedStartupAgro')"
+                    style="margin-top:8px;">
+                    <span>📰 Feed Startup-Agro</span>
+                    <span>›</span>
+                </button>
+
+                <div
+                    id="janelaFeedStartupAgro"
+                    class="service-modal hidden">
+
+                    <div class="service-modal-box">
+
+                        <div class="service-modal-header">
+                            <strong>📰 Feed Startup-Agro</strong>
+
+                            <button
+                                type="button"
+                                class="service-close"
+                                onclick="fecharJanelaServico('janelaFeedStartupAgro')">
+                                ×
+                            </button>
+                        </div>
+
+                        <div class="service-modal-body">
 
                             <div
                                 id="listaFeedStartupAgro"
