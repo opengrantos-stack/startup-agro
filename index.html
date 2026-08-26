@@ -2280,6 +2280,397 @@ body.service-modal-open {
 
 
         // ============================================================
+        // GESTÃO ADMINISTRATIVA DO FEED
+        // ============================================================
+
+        async function carregarGestaoFeed() {
+
+            const container =
+                document.getElementById('listaGestaoFeed');
+
+            if (!container) return;
+
+            if (!utilizadorAtual || !utilizadorAtual.ehAdministrador) {
+                container.innerHTML =
+                    '<p style="color:#c62828;">Acesso reservado ao administrador.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <p style="
+                    color:#777;
+                    text-align:center;
+                ">
+                    ⏳ A carregar publicações...
+                </p>
+            `;
+
+            try {
+
+                const res = await fetch(
+                    `${API}/admin/feed-publicacoes`,
+                    {
+                        headers: {
+                            'x-owner-token':
+                                utilizadorAtual.ownerToken
+                        }
+                    }
+                );
+
+                const publicacoes = await res.json();
+
+                if (!res.ok || !Array.isArray(publicacoes)) {
+                    throw new Error(
+                        publicacoes.erro ||
+                        'Erro ao carregar publicações.'
+                    );
+                }
+
+                if (publicacoes.length === 0) {
+                    container.innerHTML = `
+                        <div style="
+                            padding:12px;
+                            text-align:center;
+                            color:#777;
+                        ">
+                            📰 Ainda não existem publicações.
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = publicacoes.map(p => {
+
+                    const estadoPublicacao =
+                        p.publica
+                            ? '🟢 Pública'
+                            : '🔒 Privada';
+
+                    const estadoDestaque =
+                        p.destaque
+                            ? '⭐ Destaque'
+                            : '☆ Normal';
+
+                    const data =
+                        p.data
+                            ? formatarDataPublicacao(p.data)
+                            : '';
+
+                    return `
+                        <div style="
+                            margin-top:10px;
+                            padding:12px;
+                            border:1px solid #ddd;
+                            border-radius:10px;
+                            background:#fff;
+                        ">
+
+                            <strong style="
+                                display:block;
+                                font-size:14px;
+                                margin-bottom:6px;
+                            ">
+                                ${p.titulo || 'Sem título'}
+                            </strong>
+
+                            <div style="
+                                font-size:12px;
+                                color:#666;
+                                margin-bottom:8px;
+                            ">
+                                ${estadoPublicacao}
+                                &nbsp; • &nbsp;
+                                ${estadoDestaque}
+                            </div>
+
+                            <div style="
+                                font-size:13px;
+                                line-height:1.5;
+                                white-space:pre-wrap;
+                                overflow-wrap:anywhere;
+                                margin-bottom:8px;
+                            ">
+                                ${p.conteudo || ''}
+                            </div>
+
+                            <div style="
+                                font-size:11px;
+                                color:#888;
+                                margin-bottom:10px;
+                            ">
+                                ${data}
+                            </div>
+
+                            <div style="
+                                display:flex;
+                                flex-wrap:wrap;
+                                gap:6px;
+                            ">
+
+                                <button
+                                    type="button"
+                                    onclick="editarPublicacaoFeed(${p.id})"
+                                    style="
+                                        border:0;
+                                        border-radius:7px;
+                                        padding:7px 10px;
+                                        cursor:pointer;
+                                    "
+                                >
+                                    ✏️ Editar
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onclick="alternarPublicacaoFeed(${p.id}, ${!p.publica})"
+                                    style="
+                                        border:0;
+                                        border-radius:7px;
+                                        padding:7px 10px;
+                                        cursor:pointer;
+                                    "
+                                >
+                                    ${p.publica ? '🔒 Tornar privada' : '👁️ Publicar'}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onclick="alternarDestaqueFeed(${p.id}, ${!p.destaque})"
+                                    style="
+                                        border:0;
+                                        border-radius:7px;
+                                        padding:7px 10px;
+                                        cursor:pointer;
+                                    "
+                                >
+                                    ${p.destaque ? '☆ Retirar destaque' : '⭐ Destacar'}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onclick="eliminarPublicacaoFeed(${p.id})"
+                                    style="
+                                        border:0;
+                                        border-radius:7px;
+                                        padding:7px 10px;
+                                        cursor:pointer;
+                                        color:#c62828;
+                                    "
+                                >
+                                    🗑️ Eliminar
+                                </button>
+
+                            </div>
+
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+
+                console.error(
+                    'ERRO AO CARREGAR GESTÃO DO FEED:',
+                    error
+                );
+
+                container.innerHTML = `
+                    <div style="
+                        color:#c62828;
+                        padding:10px;
+                    ">
+                        ❌ ${error.message || 'Erro ao carregar gestão do Feed.'}
+                    </div>
+                `;
+            }
+        }
+
+
+        async function alternarPublicacaoFeed(id, publica) {
+
+            if (!utilizadorAtual || !utilizadorAtual.ehAdministrador) {
+                alert('Apenas o administrador pode alterar a publicação.');
+                return;
+            }
+
+            try {
+
+                const res = await fetch(
+                    `${API}/admin/feed-publicacoes/${id}/publicar`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-owner-token':
+                                utilizadorAtual.ownerToken
+                        },
+                        body: JSON.stringify({ publica })
+                    }
+                );
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(
+                        dados.erro || 'Erro ao alterar publicação.'
+                    );
+                }
+
+                await carregarGestaoFeed();
+                await carregarFeedStartupAgro();
+
+            } catch (error) {
+
+                alert(error.message || 'Erro ao alterar publicação.');
+            }
+        }
+
+
+        async function alternarDestaqueFeed(id, destaque) {
+
+            if (!utilizadorAtual || !utilizadorAtual.ehAdministrador) {
+                alert('Apenas o administrador pode alterar o destaque.');
+                return;
+            }
+
+            try {
+
+                const res = await fetch(
+                    `${API}/admin/feed-publicacoes/${id}/destaque`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-owner-token':
+                                utilizadorAtual.ownerToken
+                        },
+                        body: JSON.stringify({ destaque })
+                    }
+                );
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(
+                        dados.erro || 'Erro ao alterar destaque.'
+                    );
+                }
+
+                await carregarGestaoFeed();
+                await carregarFeedStartupAgro();
+
+            } catch (error) {
+
+                alert(error.message || 'Erro ao alterar destaque.');
+            }
+        }
+
+
+        async function eliminarPublicacaoFeed(id) {
+
+            if (!utilizadorAtual || !utilizadorAtual.ehAdministrador) {
+                alert('Apenas o administrador pode eliminar publicações.');
+                return;
+            }
+
+            if (!confirm(
+                'Tem certeza que deseja eliminar esta publicação?'
+            )) {
+                return;
+            }
+
+            try {
+
+                const res = await fetch(
+                    `${API}/admin/feed-publicacoes/${id}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            'x-owner-token':
+                                utilizadorAtual.ownerToken
+                        }
+                    }
+                );
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(
+                        dados.erro || 'Erro ao eliminar publicação.'
+                    );
+                }
+
+                await carregarGestaoFeed();
+                await carregarFeedStartupAgro();
+
+            } catch (error) {
+
+                alert(error.message || 'Erro ao eliminar publicação.');
+            }
+        }
+
+
+        async function editarPublicacaoFeed(id) {
+
+            if (!utilizadorAtual || !utilizadorAtual.ehAdministrador) {
+                alert('Apenas o administrador pode editar publicações.');
+                return;
+            }
+
+            const titulo = prompt(
+                'Novo título da publicação:'
+            );
+
+            if (titulo === null || !titulo.trim()) {
+                return;
+            }
+
+            const conteudo = prompt(
+                'Novo conteúdo da publicação:'
+            );
+
+            if (conteudo === null || !conteudo.trim()) {
+                return;
+            }
+
+            try {
+
+                const res = await fetch(
+                    `${API}/admin/feed-publicacoes/${id}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-owner-token':
+                                utilizadorAtual.ownerToken
+                        },
+                        body: JSON.stringify({
+                            titulo: titulo.trim(),
+                            conteudo: conteudo.trim(),
+                            tipo: 'informacao',
+                            imagem: null
+                        })
+                    }
+                );
+
+                const dados = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(
+                        dados.erro || 'Erro ao editar publicação.'
+                    );
+                }
+
+                await carregarGestaoFeed();
+                await carregarFeedStartupAgro();
+
+            } catch (error) {
+
+                alert(error.message || 'Erro ao editar publicação.');
+            }
+        }
+
+
+        // ============================================================
         // FEED STARTUP-AGRO
         // Funcionalidade independente
         // ============================================================
@@ -4402,6 +4793,12 @@ function abrirJanelaServico(id) {
     if (id === "janelaFeedStartupAgro") {
         if (typeof carregarFeedStartupAgro === "function") {
             carregarFeedStartupAgro();
+        }
+    }
+
+    if (id === "janelaGerirFeed") {
+        if (typeof carregarGestaoFeed === "function") {
+            carregarGestaoFeed();
         }
     }
 

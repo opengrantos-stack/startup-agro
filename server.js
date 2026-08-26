@@ -237,10 +237,27 @@ async function criarTabelas() {
 
             destaque BOOLEAN DEFAULT FALSE,
 
+            -- FALSE = privada
+            -- TRUE = pública no Feed Startup-Agro
+            publica BOOLEAN DEFAULT FALSE,
+
             owner_token TEXT,
 
             data TIMESTAMPTZ DEFAULT NOW()
         );
+    `);
+
+    // Migração para instalações onde a tabela já existia.
+    await pool.query(`
+        ALTER TABLE feed_publicacoes
+        ADD COLUMN IF NOT EXISTS publica BOOLEAN DEFAULT FALSE;
+    `);
+
+    // Publicações existentes ficam privadas por segurança.
+    await pool.query(`
+        UPDATE feed_publicacoes
+        SET publica = FALSE
+        WHERE publica IS NULL;
     `);
 
     await pool.query(`
@@ -251,6 +268,11 @@ async function criarTabelas() {
     await pool.query(`
         CREATE INDEX IF NOT EXISTS idx_feed_publicacoes_destaque
         ON feed_publicacoes(destaque);
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_feed_publicacoes_publica
+        ON feed_publicacoes(publica);
     `);
 
     console.log('POSTGRES: tabela feed_publicacoes verificada/criada.');
@@ -1545,6 +1567,7 @@ app.get('/feed-publicacoes', async (req, res) => {
                 destaque,
                 data
             FROM feed_publicacoes
+            WHERE publica = TRUE
             ORDER BY destaque DESC, data DESC
             LIMIT 30
         `);
@@ -1650,6 +1673,343 @@ app.post('/feed-publicacoes', async (req, res) => {
 
 
 // ============================================================
+// GESTÃO ADMINISTRATIVA DO FEED
+// ============================================================
+
+// Listar todas as publicações para o administrador,
+// incluindo públicas e privadas.
+app.get('/admin/feed-publicacoes', async (req, res) => {
+    try {
+
+        const ownerToken =
+            req.headers['x-owner-token'];
+
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerToken);
+
+        if (!ehAdministrador) {
+            return res.status(403).json({
+                erro: 'Apenas o administrador pode gerir publicações.'
+            });
+        }
+
+        const resultado = await pool.query(`
+            SELECT
+                id,
+                titulo,
+                conteudo,
+                tipo,
+                autor_nome AS "autorNome",
+                autor_tipo AS "autorTipo",
+                imagem,
+                produto_id AS "produtoId",
+                preciso_id AS "precisoId",
+                destaque,
+                publica,
+                data
+            FROM feed_publicacoes
+            ORDER BY destaque DESC, data DESC
+        `);
+
+        res.json(resultado.rows);
+
+    } catch (error) {
+
+        console.error(
+            'ERRO AO CARREGAR GESTÃO DO FEED:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao carregar publicações para gestão.'
+        });
+    }
+});
+
+
+// ============================================================
+// ELIMINAR PUBLICAÇÃO DO FEED
+// ============================================================
+
+app.delete('/admin/feed-publicacoes/:id', async (req, res) => {
+    try {
+
+        const ownerToken =
+            req.headers['x-owner-token'];
+
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerToken);
+
+        if (!ehAdministrador) {
+            return res.status(403).json({
+                erro: 'Apenas o administrador pode eliminar publicações.'
+            });
+        }
+
+        const { id } = req.params;
+
+        const resultado = await pool.query(`
+            DELETE FROM feed_publicacoes
+            WHERE id = $1
+            RETURNING id
+        `, [id]);
+
+        if (resultado.rowCount === 0) {
+            return res.status(404).json({
+                erro: 'Publicação não encontrada.'
+            });
+        }
+
+        res.json({
+            mensagem: 'Publicação eliminada com sucesso.'
+        });
+
+    } catch (error) {
+
+        console.error(
+            'ERRO AO ELIMINAR PUBLICAÇÃO DO FEED:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao eliminar publicação.'
+        });
+    }
+});
+
+
+// ============================================================
+// EDITAR PUBLICAÇÃO DO FEED
+// ============================================================
+
+app.put('/admin/feed-publicacoes/:id', async (req, res) => {
+    try {
+
+        const ownerToken =
+            req.headers['x-owner-token'];
+
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerToken);
+
+        if (!ehAdministrador) {
+            return res.status(403).json({
+                erro: 'Apenas o administrador pode editar publicações.'
+            });
+        }
+
+        const { id } = req.params;
+
+        const {
+            titulo,
+            conteudo,
+            tipo,
+            imagem
+        } = req.body;
+
+        if (!titulo || !conteudo) {
+            return res.status(400).json({
+                erro: 'Título e conteúdo são obrigatórios.'
+            });
+        }
+
+        const resultado = await pool.query(`
+            UPDATE feed_publicacoes
+            SET
+                titulo = $1,
+                conteudo = $2,
+                tipo = $3,
+                imagem = $4
+            WHERE id = $5
+            RETURNING
+                id,
+                titulo,
+                conteudo,
+                tipo,
+                autor_nome AS "autorNome",
+                autor_tipo AS "autorTipo",
+                imagem,
+                produto_id AS "produtoId",
+                preciso_id AS "precisoId",
+                destaque,
+                publica,
+                data
+        `, [
+            titulo,
+            conteudo,
+            tipo || 'informacao',
+            imagem || null,
+            id
+        ]);
+
+        if (resultado.rowCount === 0) {
+            return res.status(404).json({
+                erro: 'Publicação não encontrada.'
+            });
+        }
+
+        res.json({
+            mensagem: 'Publicação atualizada com sucesso.',
+            publicacao: resultado.rows[0]
+        });
+
+    } catch (error) {
+
+        console.error(
+            'ERRO AO EDITAR PUBLICAÇÃO DO FEED:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao editar publicação.'
+        });
+    }
+});
+
+
+// ============================================================
+// ALTERAR DESTAQUE DA PUBLICAÇÃO
+// ============================================================
+
+app.put('/admin/feed-publicacoes/:id/destaque', async (req, res) => {
+    try {
+
+        const ownerToken =
+            req.headers['x-owner-token'];
+
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerToken);
+
+        if (!ehAdministrador) {
+            return res.status(403).json({
+                erro: 'Apenas o administrador pode alterar o destaque.'
+            });
+        }
+
+        const { id } = req.params;
+        const { destaque } = req.body;
+
+        if (typeof destaque !== 'boolean') {
+            return res.status(400).json({
+                erro: 'O campo destaque deve ser verdadeiro ou falso.'
+            });
+        }
+
+        const resultado = await pool.query(`
+            UPDATE feed_publicacoes
+            SET destaque = $1
+            WHERE id = $2
+            RETURNING
+                id,
+                titulo,
+                destaque,
+                publica,
+                data
+        `, [
+            destaque,
+            id
+        ]);
+
+        if (resultado.rowCount === 0) {
+            return res.status(404).json({
+                erro: 'Publicação não encontrada.'
+            });
+        }
+
+        res.json({
+            mensagem: destaque
+                ? 'Publicação marcada como destaque.'
+                : 'Publicação retirada dos destaques.',
+            publicacao: resultado.rows[0]
+        });
+
+    } catch (error) {
+
+        console.error(
+            'ERRO AO ALTERAR DESTAQUE DO FEED:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao alterar destaque da publicação.'
+        });
+    }
+});
+
+
+// ============================================================
+// ALTERAR VISIBILIDADE DA PUBLICAÇÃO
+// ============================================================
+
+app.put('/admin/feed-publicacoes/:id/publicar', async (req, res) => {
+    try {
+
+        const ownerToken =
+            req.headers['x-owner-token'];
+
+        const ehAdministrador =
+            await verificarAdministradorPorToken(ownerToken);
+
+        if (!ehAdministrador) {
+            return res.status(403).json({
+                erro: 'Apenas o administrador pode alterar a visibilidade.'
+            });
+        }
+
+        const { id } = req.params;
+        const { publica } = req.body;
+
+        if (typeof publica !== 'boolean') {
+            return res.status(400).json({
+                erro: 'O campo publica deve ser verdadeiro ou falso.'
+            });
+        }
+
+        const resultado = await pool.query(`
+            UPDATE feed_publicacoes
+            SET publica = $1
+            WHERE id = $2
+            RETURNING
+                id,
+                titulo,
+                conteudo,
+                tipo,
+                imagem,
+                destaque,
+                publica,
+                data
+        `, [
+            publica,
+            id
+        ]);
+
+        if (resultado.rowCount === 0) {
+            return res.status(404).json({
+                erro: 'Publicação não encontrada.'
+            });
+        }
+
+        res.json({
+            mensagem: publica
+                ? 'Publicação tornada pública no Feed Startup-Agro.'
+                : 'Publicação retirada do Feed Startup-Agro e mantida privada.',
+            publicacao: resultado.rows[0]
+        });
+
+    } catch (error) {
+
+        console.error(
+            'ERRO AO ALTERAR VISIBILIDADE DO FEED:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Erro ao alterar visibilidade da publicação.'
+        });
+    }
+});
+
+
+// ============================================================
 // PUBLICAÇÃO DO ADMINISTRADOR
 // ============================================================
 
@@ -1664,7 +2024,7 @@ app.post('/admin/feed-publicacoes', async (req, res) => {
 
         if (!ehAdministrador) {
             return res.status(403).json({
-                erro: 'Apenas o administrador pode publicar informações.'
+                erro: 'Apenas o administrador pode gerir publicações.'
             });
         }
 
@@ -1684,6 +2044,9 @@ app.post('/admin/feed-publicacoes', async (req, res) => {
             });
         }
 
+        // Toda nova publicação começa privada.
+        // Só uma ação administrativa posterior poderá
+        // torná-la pública no Feed Startup-Agro.
         const resultado = await pool.query(`
             INSERT INTO feed_publicacoes (
                 titulo,
@@ -1695,13 +2058,14 @@ app.post('/admin/feed-publicacoes', async (req, res) => {
                 produto_id,
                 preciso_id,
                 destaque,
+                publica,
                 owner_token
             )
             VALUES (
                 $1, $2, $3,
                 'Startup-Agro',
                 'administrador',
-                $4, $5, $6, $7, $8
+                $4, $5, $6, $7, FALSE, $8
             )
             RETURNING
                 id,
@@ -1714,6 +2078,7 @@ app.post('/admin/feed-publicacoes', async (req, res) => {
                 produto_id AS "produtoId",
                 preciso_id AS "precisoId",
                 destaque,
+                publica,
                 data
         `, [
             titulo,
@@ -1727,19 +2092,19 @@ app.post('/admin/feed-publicacoes', async (req, res) => {
         ]);
 
         res.status(201).json({
-            mensagem: 'Publicação do administrador criada com sucesso.',
+            mensagem: 'Publicação criada como privada. Ela só será pública após autorização administrativa.',
             publicacao: resultado.rows[0]
         });
 
     } catch (error) {
 
         console.error(
-            'ERRO AO PUBLICAR NO FEED COMO ADMIN:',
+            'ERRO AO CRIAR PUBLICAÇÃO DO ADMINISTRADOR:',
             error.message
         );
 
         res.status(500).json({
-            erro: 'Erro ao criar publicação do administrador.'
+            erro: 'Erro ao criar publicação.'
         });
     }
 });
