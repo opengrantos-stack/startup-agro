@@ -2681,6 +2681,19 @@ body.service-modal-open {
         }
 
 
+        function abrirPublicacaoFeed(id) {
+    abrirJanelaServico("janelaFeedStartupAgro");
+
+    const artigo = document.querySelector(`[data-feed-id="${id}"]`);
+
+    if (artigo) {
+        artigo.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+}
+
         async function carregarFeedStartupAgro() {
 
             const container =
@@ -2795,6 +2808,8 @@ body.service-modal-open {
 
                     container.innerHTML += `
                         <article
+                            data-feed-id="${publicacao.id}"
+                            onclick="abrirPublicacaoFeed(${publicacao.id})"
                             style="
                                 width:100%;
                                 box-sizing:border-box;
