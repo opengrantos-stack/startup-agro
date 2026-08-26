@@ -686,6 +686,45 @@ body.service-modal-open {
 .admin-only.hidden {
     display:none !important;
 }
+        .feed-sala {
+            position:fixed;
+            inset:0;
+            z-index:9999;
+            background:#f5f7f6;
+            width:100%;
+            height:100vh;
+            overflow-y:auto;
+        }
+
+        .feed-sala.hidden {
+            display:none;
+        }
+
+        .feed-sala .service-modal-box {
+            width:100%;
+            max-width:none;
+            min-height:100vh;
+            margin:0;
+            border-radius:0;
+            box-sizing:border-box;
+            background:#f5f7f6;
+        }
+
+        .feed-sala .service-modal-header {
+            position:sticky;
+            top:0;
+            z-index:10;
+            background:#fff;
+        }
+
+        .feed-sala .service-modal-body {
+            width:100%;
+            max-width:900px;
+            margin:0 auto;
+            box-sizing:border-box;
+            padding:12px;
+        }
+
 </style>
 
 </head>
@@ -1164,7 +1203,7 @@ body.service-modal-open {
 
                 <div
                     id="janelaFeedStartupAgro"
-                    class="service-modal hidden">
+                    class="feed-sala hidden">
 
                     <div class="service-modal-box">
 
@@ -1189,6 +1228,7 @@ body.service-modal-open {
                                     gap:8px;
                                 ">
 
+
                                 <div style="
                                     padding:10px;
                                     border:1px solid #e0e0e0;
@@ -1202,6 +1242,11 @@ body.service-modal-open {
                                 </div>
 
                             </div>
+
+                            <div
+                                id="visualizacaoPublicacaoFeed"
+                                style="display:none;"
+                            ></div>
 
                         </div>
                     </div>
@@ -2682,17 +2727,57 @@ body.service-modal-open {
 
 
         function abrirPublicacaoFeed(id) {
-    abrirJanelaServico("janelaFeedStartupAgro");
+    const lista = document.getElementById("listaFeedStartupAgro");
+    const visualizacao = document.getElementById("visualizacaoPublicacaoFeed");
+
+    if (!lista || !visualizacao) return;
 
     const artigo = document.querySelector(`[data-feed-id="${id}"]`);
 
-    if (artigo) {
-        artigo.scrollIntoView({
-            behavior: "smooth",
-            block: "start"
-        });
-    }
+    if (!artigo) return;
+
+    lista.style.display = "none";
+    visualizacao.style.display = "block";
+
+    visualizacao.innerHTML = `
+        <button
+            type="button"
+            onclick="voltarAoFeedStartupAgro()"
+            style="
+                border:none;
+                background:none;
+                color:#2e7d32;
+                font-size:13px;
+                font-weight:700;
+                padding:8px 0;
+                margin-bottom:8px;
+                cursor:pointer;
+            "
+        >
+            ← Voltar ao Feed
+        </button>
+
+        <div style="
+            background:#fff;
+            border:1px solid #e0e0e0;
+            border-radius:10px;
+            padding:15px;
+        ">
+            ${artigo.innerHTML}
+        </div>
+    `;
 }
+
+        function voltarAoFeedStartupAgro() {
+            const lista = document.getElementById("listaFeedStartupAgro");
+            const visualizacao = document.getElementById("visualizacaoPublicacaoFeed");
+
+            if (!lista || !visualizacao) return;
+
+            visualizacao.style.display = "none";
+            visualizacao.innerHTML = "";
+            lista.style.display = "flex";
+        }
 
         async function carregarFeedStartupAgro() {
 
