@@ -766,6 +766,17 @@ body.service-modal-open {
             <img src="/logo.png" alt="Startup-Agro Logo" style="max-width: 120px; margin-bottom: 10px;">
             <h1>🌱 Startup Agro</h1>
             <p>Conectando Agricultores e Compradores em Angola</p>
+            <button
+                type="button"
+                id="btnConnectWallet"
+                style="margin-top:10px; background:#1b5e20; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:bold;"
+            >
+                🔗 Conectar Wallet
+            </button>
+            <div
+                id="walletStatus"
+                style="margin-top:8px; font-size:13px; color:#555;"
+            ></div>
         </header>
 
         <!-- ECRÃ DE LOGIN / CADASTRO -->
@@ -6553,6 +6564,87 @@ async function perguntarIAStartupAgro() {
 }
 </script>
 
+
+
+<script>
+/* ==============================
+   STARTUP-AGRO — CONNECT WALLET
+   ============================== */
+
+(function () {
+    const botao = document.getElementById('btnConnectWallet');
+    const status = document.getElementById('walletStatus');
+
+    if (!botao || !status) return;
+
+    botao.addEventListener('click', async function () {
+
+        if (typeof window.ethereum === 'undefined') {
+            status.textContent =
+                '⚠️ Nenhuma carteira Web3 encontrada neste navegador.';
+            status.style.color = '#d32f2f';
+            return;
+        }
+
+        try {
+            botao.disabled = true;
+            botao.textContent = '⏳ A conectar...';
+
+            status.textContent =
+                'A solicitar ligação à carteira...';
+            status.style.color = '#555';
+
+            const contas = await window.ethereum.request({
+                method: 'eth_requestAccounts'
+            });
+
+            if (!contas || contas.length === 0) {
+                throw new Error(
+                    'Nenhuma carteira foi selecionada.'
+                );
+            }
+
+            const endereco = contas[0];
+
+            const encurtado =
+                endereco.slice(0, 6) +
+                '...' +
+                endereco.slice(-4);
+
+            status.textContent =
+                '✅ Wallet conectada: ' + encurtado;
+
+            status.style.color = '#2e7d32';
+
+            botao.textContent =
+                '🔗 Wallet Conectada';
+
+            console.log('STARTUP-AGRO WALLET:', {
+                address: endereco,
+                type: 'evm'
+            });
+
+        } catch (erro) {
+
+            console.error(
+                'ERRO AO CONECTAR WALLET:',
+                erro
+            );
+
+            status.textContent =
+                '❌ Não foi possível conectar a carteira.';
+
+            status.style.color = '#d32f2f';
+
+            botao.textContent =
+                '🔗 Conectar Wallet';
+
+        } finally {
+            botao.disabled = false;
+        }
+    });
+})();
+</script>
 
 </body>
 </html>
