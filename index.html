@@ -6568,7 +6568,7 @@ async function perguntarIAStartupAgro() {
 
 <script>
 /* ==========================================
-   STARTUP-AGRO — CONNECT WALLET V2
+   STARTUP-AGRO — SELETOR DE WALLET V3
    ========================================== */
 
 (function () {
@@ -6583,184 +6583,343 @@ async function perguntarIAStartupAgro() {
         status.style.color = cor;
     }
 
-    async function conectarEthereum(provedor, nome) {
-
-        try {
-
-            botao.disabled = true;
-            botao.textContent = '⏳ A conectar...';
-
-            mostrarStatus(
-                'A solicitar ligação à ' + nome + '...',
-                '#555'
-            );
-
-            const contas = await provedor.request({
-                method: 'eth_requestAccounts'
-            });
-
-            if (!contas || contas.length === 0) {
-                throw new Error('Nenhuma conta selecionada.');
-            }
-
-            const endereco = contas[0];
-
-            const encurtado =
-                endereco.slice(0, 6) +
-                '...' +
-                endereco.slice(-4);
-
-            mostrarStatus(
-                '✅ ' + nome + ' conectada: ' + encurtado,
-                '#2e7d32'
-            );
-
-            botao.textContent = '🔗 Wallet Conectada';
-
-            console.log(
-                'STARTUP-AGRO WALLET:',
-                {
-                    address: endereco,
-                    wallet: nome,
-                    type: 'evm'
-                }
-            );
-
-        } catch (erro) {
-
-            console.error(
-                'ERRO AO CONECTAR WALLET:',
-                erro
-            );
-
-            mostrarStatus(
-                '❌ Ligação cancelada ou não autorizada.',
-                '#d32f2f'
-            );
-
-            botao.textContent = '🔗 Conectar Wallet';
-
-        } finally {
-
-            botao.disabled = false;
-
-        }
+    function fecharModal() {
+        const modal = document.getElementById('startupWalletModal');
+        if (modal) modal.remove();
     }
 
-    function obterProvedor() {
+    function criarModal() {
 
-        /*
-         * Algumas carteiras injetam vários provedores
-         * em window.ethereum.providers.
-         */
+        if (document.getElementById('startupWalletModal')) return;
 
-        if (
-            window.ethereum &&
-            Array.isArray(window.ethereum.providers)
-        ) {
+        const modal = document.createElement('div');
 
-            const provedores =
-                window.ethereum.providers;
+        modal.id = 'startupWalletModal';
 
-            const metamask =
-                provedores.find(
-                    p => p.isMetaMask
-                );
+        modal.innerHTML = `
+            <div id="startupWalletOverlay"
+                style="
+                    position:fixed;
+                    inset:0;
+                    z-index:10000;
+                    background:rgba(0,0,0,.45);
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    padding:20px;
+                    box-sizing:border-box;
+                ">
 
-            if (metamask) {
-                return {
-                    provider: metamask,
-                    nome: 'MetaMask'
-                };
+                <div
+                    style="
+                        width:min(360px,100%);
+                        background:#fff;
+                        border-radius:18px;
+                        padding:22px;
+                        box-sizing:border-box;
+                        box-shadow:0 10px 35px rgba(0,0,0,.3);
+                        text-align:center;
+                    ">
+
+                    <div style="font-size:32px;margin-bottom:8px;">
+                        🔗
+                    </div>
+
+                    <h3 style="margin:0 0 7px;color:#1b5e20;">
+                        Conectar Wallet
+                    </h3>
+
+                    <p style="margin:0 0 18px;color:#666;font-size:14px;">
+                        Escolha a carteira que deseja conectar.
+                    </p>
+
+                    <button type="button"
+                        data-wallet="metamask"
+                        style="
+                            width:100%;
+                            padding:13px;
+                            margin-bottom:10px;
+                            border:1px solid #ddd;
+                            border-radius:10px;
+                            background:#fff;
+                            font-weight:bold;
+                            font-size:15px;
+                        ">
+                        🦊 MetaMask
+                    </button>
+
+                    <button type="button"
+                        data-wallet="phantom"
+                        style="
+                            width:100%;
+                            padding:13px;
+                            margin-bottom:10px;
+                            border:1px solid #ddd;
+                            border-radius:10px;
+                            background:#fff;
+                            font-weight:bold;
+                            font-size:15px;
+                        ">
+                        👻 Phantom
+                    </button>
+
+                    <button type="button"
+                        data-wallet="trust"
+                        style="
+                            width:100%;
+                            padding:13px;
+                            margin-bottom:14px;
+                            border:1px solid #ddd;
+                            border-radius:10px;
+                            background:#fff;
+                            font-weight:bold;
+                            font-size:15px;
+                        ">
+                        🛡️ Trust Wallet
+                    </button>
+
+                    <button type="button"
+                        id="fecharStartupWallet"
+                        style="
+                            width:100%;
+                            padding:10px;
+                            border:none;
+                            border-radius:10px;
+                            background:#f1f1f1;
+                            color:#555;
+                            font-weight:bold;
+                        ">
+                        Cancelar
+                    </button>
+
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const overlay =
+            document.getElementById('startupWalletOverlay');
+
+        overlay.addEventListener('click', function (evento) {
+
+            if (evento.target === overlay) {
+                fecharModal();
             }
 
-            const phantom =
-                provedores.find(
-                    p => p.isPhantom
-                );
+        });
 
-            if (phantom) {
-                return {
-                    provider: phantom,
-                    nome: 'Phantom'
-                };
-            }
+        document
+            .getElementById('fecharStartupWallet')
+            .addEventListener('click', fecharModal);
 
-            return {
-                provider: provedores[0],
-                nome: 'Wallet Web3'
-            };
+        modal
+            .querySelectorAll('[data-wallet]')
+            .forEach(function (opcao) {
+
+                opcao.addEventListener('click', function () {
+
+                    conectarWallet(
+                        this.dataset.wallet
+                    );
+
+                });
+
+            });
+    }
+
+    function obterProvider(tipo) {
+
+        const providers =
+            window.ethereum?.providers || [];
+
+        if (tipo === 'metamask') {
+
+            return (
+                providers.find(p => p.isMetaMask) ||
+                (window.ethereum?.isMetaMask
+                    ? window.ethereum
+                    : null)
+            );
+
         }
 
-        if (window.ethereum) {
+        if (tipo === 'phantom') {
 
-            if (window.ethereum.isMetaMask) {
-                return {
-                    provider: window.ethereum,
-                    nome: 'MetaMask'
-                };
-            }
+            return (
+                providers.find(p => p.isPhantom) ||
+                window.phantom?.ethereum ||
+                null
+            );
 
-            if (window.ethereum.isPhantom) {
-                return {
-                    provider: window.ethereum,
-                    nome: 'Phantom'
-                };
-            }
+        }
 
-            return {
-                provider: window.ethereum,
-                nome: 'Wallet Web3'
-            };
+        if (tipo === 'trust') {
+
+            return (
+                providers.find(p => p.isTrust) ||
+                (window.ethereum?.isTrust
+                    ? window.ethereum
+                    : null)
+            );
+
         }
 
         return null;
     }
 
-    botao.addEventListener(
-        'click',
-        async function () {
+    async function conectarWallet(tipo) {
 
-            /*
-             * Pequeno deslocamento do foco para garantir
-             * que o botão da IA continue visível.
-             */
+        let provider = obterProvider(tipo);
 
-            const botaoIA =
-                document.getElementById(
-                    'startup-agro-ia-button'
+        const nomes = {
+            metamask: 'MetaMask',
+            phantom: 'Phantom',
+            trust: 'Trust Wallet'
+        };
+
+        const nome = nomes[tipo] || 'Wallet';
+
+        /*
+         * Se a wallet já estiver injetada,
+         * fazemos a ligação diretamente.
+         */
+
+        if (provider) {
+
+            try {
+
+                botao.disabled = true;
+                botao.textContent = '⏳ A conectar...';
+
+                mostrarStatus(
+                    'A solicitar ligação à ' + nome + '...',
+                    '#555'
                 );
 
-            if (botaoIA) {
-                botaoIA.style.zIndex = '9998';
-            }
+                const contas =
+                    await provider.request({
+                        method: 'eth_requestAccounts'
+                    });
 
-            const carteira =
-                obterProvedor();
+                if (!contas || !contas.length) {
+                    throw new Error(
+                        'Nenhuma conta selecionada.'
+                    );
+                }
 
-            if (carteira) {
-
-                await conectarEthereum(
-                    carteira.provider,
-                    carteira.nome
+                finalizarConexao(
+                    contas[0],
+                    nome
                 );
+
+                fecharModal();
+
+                return;
+
+            } catch (erro) {
+
+                console.error(
+                    'ERRO WALLET:',
+                    erro
+                );
+
+                mostrarStatus(
+                    '❌ Ligação cancelada ou não autorizada.',
+                    '#d32f2f'
+                );
+
+                botao.textContent =
+                    '🔗 Conectar Wallet';
+
+                botao.disabled = false;
+
+                fecharModal();
 
                 return;
             }
+        }
 
-            /*
-             * Se o navegador não tiver wallet injetada,
-             * orientamos o utilizador.
-             */
+        /*
+         * Em navegadores móveis onde a wallet não está
+         * injetada, tentamos abrir a aplicação correspondente.
+         */
+
+        let deepLink = '';
+
+        if (tipo === 'metamask') {
+            deepLink =
+                'https://metamask.app.link/dapp/' +
+                window.location.host +
+                window.location.pathname;
+        }
+
+        if (tipo === 'phantom') {
+            deepLink =
+                'https://phantom.app/ul/browse/' +
+                encodeURIComponent(window.location.href);
+        }
+
+        if (tipo === 'trust') {
+            deepLink =
+                'https://link.trustwallet.com/open_url?url=' +
+                encodeURIComponent(window.location.href);
+        }
+
+        if (deepLink) {
 
             mostrarStatus(
-                '⚠️ Abra a Startup-Agro dentro do navegador da sua Wallet (MetaMask, Phantom ou Trust Wallet).',
-                '#d32f2f'
+                'A abrir ' + nome + '...',
+                '#555'
             );
 
-            console.log(
-                'STARTUP-AGRO: nenhuma wallet EVM injetada.'
-            );
+            fecharModal();
+
+            window.location.href = deepLink;
+
+            return;
+        }
+
+        mostrarStatus(
+            '⚠️ Não foi possível abrir a carteira.',
+            '#d32f2f'
+        );
+
+        fecharModal();
+    }
+
+    function finalizarConexao(endereco, nome) {
+
+        const encurtado =
+            endereco.slice(0, 6) +
+            '...' +
+            endereco.slice(-4);
+
+        mostrarStatus(
+            '✅ ' + nome +
+            ' conectada: ' +
+            encurtado,
+            '#2e7d32'
+        );
+
+        botao.textContent =
+            '🔗 Wallet Conectada';
+
+        console.log(
+            'STARTUP-AGRO WALLET:',
+            {
+                address: endereco,
+                wallet: nome,
+                type: 'evm'
+            }
+        );
+    }
+
+    botao.addEventListener(
+        'click',
+        function () {
+
+            criarModal();
 
         }
     );
