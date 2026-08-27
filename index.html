@@ -6567,41 +6567,40 @@ async function perguntarIAStartupAgro() {
 
 
 <script>
-/* ==============================
-   STARTUP-AGRO — CONNECT WALLET
-   ============================== */
+/* ==========================================
+   STARTUP-AGRO — CONNECT WALLET V2
+   ========================================== */
 
 (function () {
+
     const botao = document.getElementById('btnConnectWallet');
     const status = document.getElementById('walletStatus');
 
     if (!botao || !status) return;
 
-    botao.addEventListener('click', async function () {
+    function mostrarStatus(texto, cor) {
+        status.textContent = texto;
+        status.style.color = cor;
+    }
 
-        if (typeof window.ethereum === 'undefined') {
-            status.textContent =
-                '⚠️ Nenhuma carteira Web3 encontrada neste navegador.';
-            status.style.color = '#d32f2f';
-            return;
-        }
+    async function conectarEthereum(provedor, nome) {
 
         try {
+
             botao.disabled = true;
             botao.textContent = '⏳ A conectar...';
 
-            status.textContent =
-                'A solicitar ligação à carteira...';
-            status.style.color = '#555';
+            mostrarStatus(
+                'A solicitar ligação à ' + nome + '...',
+                '#555'
+            );
 
-            const contas = await window.ethereum.request({
+            const contas = await provedor.request({
                 method: 'eth_requestAccounts'
             });
 
             if (!contas || contas.length === 0) {
-                throw new Error(
-                    'Nenhuma carteira foi selecionada.'
-                );
+                throw new Error('Nenhuma conta selecionada.');
             }
 
             const endereco = contas[0];
@@ -6611,18 +6610,21 @@ async function perguntarIAStartupAgro() {
                 '...' +
                 endereco.slice(-4);
 
-            status.textContent =
-                '✅ Wallet conectada: ' + encurtado;
+            mostrarStatus(
+                '✅ ' + nome + ' conectada: ' + encurtado,
+                '#2e7d32'
+            );
 
-            status.style.color = '#2e7d32';
+            botao.textContent = '🔗 Wallet Conectada';
 
-            botao.textContent =
-                '🔗 Wallet Conectada';
-
-            console.log('STARTUP-AGRO WALLET:', {
-                address: endereco,
-                type: 'evm'
-            });
+            console.log(
+                'STARTUP-AGRO WALLET:',
+                {
+                    address: endereco,
+                    wallet: nome,
+                    type: 'evm'
+                }
+            );
 
         } catch (erro) {
 
@@ -6631,18 +6633,138 @@ async function perguntarIAStartupAgro() {
                 erro
             );
 
-            status.textContent =
-                '❌ Não foi possível conectar a carteira.';
+            mostrarStatus(
+                '❌ Ligação cancelada ou não autorizada.',
+                '#d32f2f'
+            );
 
-            status.style.color = '#d32f2f';
-
-            botao.textContent =
-                '🔗 Conectar Wallet';
+            botao.textContent = '🔗 Conectar Wallet';
 
         } finally {
+
             botao.disabled = false;
+
         }
-    });
+    }
+
+    function obterProvedor() {
+
+        /*
+         * Algumas carteiras injetam vários provedores
+         * em window.ethereum.providers.
+         */
+
+        if (
+            window.ethereum &&
+            Array.isArray(window.ethereum.providers)
+        ) {
+
+            const provedores =
+                window.ethereum.providers;
+
+            const metamask =
+                provedores.find(
+                    p => p.isMetaMask
+                );
+
+            if (metamask) {
+                return {
+                    provider: metamask,
+                    nome: 'MetaMask'
+                };
+            }
+
+            const phantom =
+                provedores.find(
+                    p => p.isPhantom
+                );
+
+            if (phantom) {
+                return {
+                    provider: phantom,
+                    nome: 'Phantom'
+                };
+            }
+
+            return {
+                provider: provedores[0],
+                nome: 'Wallet Web3'
+            };
+        }
+
+        if (window.ethereum) {
+
+            if (window.ethereum.isMetaMask) {
+                return {
+                    provider: window.ethereum,
+                    nome: 'MetaMask'
+                };
+            }
+
+            if (window.ethereum.isPhantom) {
+                return {
+                    provider: window.ethereum,
+                    nome: 'Phantom'
+                };
+            }
+
+            return {
+                provider: window.ethereum,
+                nome: 'Wallet Web3'
+            };
+        }
+
+        return null;
+    }
+
+    botao.addEventListener(
+        'click',
+        async function () {
+
+            /*
+             * Pequeno deslocamento do foco para garantir
+             * que o botão da IA continue visível.
+             */
+
+            const botaoIA =
+                document.getElementById(
+                    'startup-agro-ia-button'
+                );
+
+            if (botaoIA) {
+                botaoIA.style.zIndex = '9998';
+            }
+
+            const carteira =
+                obterProvedor();
+
+            if (carteira) {
+
+                await conectarEthereum(
+                    carteira.provider,
+                    carteira.nome
+                );
+
+                return;
+            }
+
+            /*
+             * Se o navegador não tiver wallet injetada,
+             * orientamos o utilizador.
+             */
+
+            mostrarStatus(
+                '⚠️ Abra a Startup-Agro dentro do navegador da sua Wallet (MetaMask, Phantom ou Trust Wallet).',
+                '#d32f2f'
+            );
+
+            console.log(
+                'STARTUP-AGRO: nenhuma wallet EVM injetada.'
+            );
+
+        }
+    );
+
 })();
 </script>
 
