@@ -2149,6 +2149,9 @@ body.service-modal-open {
                 .classList.remove('hidden');
 
             // Mostrar apenas o nome da conta.
+            // Atualizar imediatamente o acesso administrativo.
+            atualizarAcessoAdministrador();
+
             document.getElementById('spanUtilizador')
                 .textContent = utilizadorAtual.nome;
 
@@ -6143,25 +6146,66 @@ function atualizarAcessoAdministrador() {
     const areaPublicar =
         document.getElementById("areaPublicarFeedAdmin");
 
-    const u = utilizadorAtual || {};
+    /*
+     * IMPORTANTE:
+     * O acesso administrativo deve depender APENAS
+     * de um valor booleano verdadeiro vindo da sessão.
+     *
+     * Não aceitamos:
+     * "admin"
+     * "true"
+     * "1"
+     * role = admin
+     * tipo = admin
+     * etc.
+     *
+     * Isso evita que contas normais recebam acesso
+     * administrativo por causa de campos antigos.
+     */
 
     const administrador =
-        u.ehAdministrador === true ||
-        u.admin === true ||
-        u.isAdmin === true ||
-        u.role === "admin" ||
-        u.tipo === "admin" ||
-        u.perfil === "admin";
+        !!(
+            utilizadorAtual &&
+            utilizadorAtual.ehAdministrador === true
+        );
+
+    console.log(
+        "CONTROLO ADMIN FEED:",
+        {
+            utilizador: utilizadorAtual
+                ? utilizadorAtual.nome
+                : null,
+            ehAdministrador:
+                utilizadorAtual
+                    ? utilizadorAtual.ehAdministrador
+                    : null,
+            administrador
+        }
+    );
 
     if (botao) {
+
         if (administrador) {
             botao.classList.remove("hidden");
         } else {
             botao.classList.add("hidden");
+
+            /*
+             * Segurança visual adicional:
+             * se uma conta normal já tinha a janela aberta,
+             * fechamos imediatamente.
+             */
+            const janela =
+                document.getElementById("janelaGerirFeed");
+
+            if (janela) {
+                janela.classList.add("hidden");
+            }
         }
     }
 
     if (areaPublicar) {
+
         if (administrador) {
             areaPublicar.classList.remove("hidden");
         } else {
