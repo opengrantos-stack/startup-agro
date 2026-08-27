@@ -3172,20 +3172,294 @@ body.service-modal-open {
                 return;
             }
 
-            const titulo = prompt(
-                'Novo título da publicação:'
-            );
+            try {
 
-            if (titulo === null || !titulo.trim()) {
+                const resLista = await fetch(
+                    `${API}/admin/feed-publicacoes`,
+                    {
+                        headers: {
+                            'x-owner-token':
+                                utilizadorAtual.ownerToken
+                        }
+                    }
+                );
+
+                const publicacoes = await resLista.json();
+
+                if (!resLista.ok || !Array.isArray(publicacoes)) {
+                    throw new Error(
+                        publicacoes.erro ||
+                        'Não foi possível carregar a publicação.'
+                    );
+                }
+
+                const publicacao = publicacoes.find(
+                    p => Number(p.id) === Number(id)
+                );
+
+                if (!publicacao) {
+                    throw new Error(
+                        'Publicação não encontrada.'
+                    );
+                }
+
+                let modal =
+                    document.getElementById('editarPublicacaoFeedModal');
+
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'editarPublicacaoFeedModal';
+
+                    modal.style.cssText = `
+                        position:fixed;
+                        inset:0;
+                        z-index:10000;
+                        background:rgba(0,0,0,.55);
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        padding:15px;
+                        box-sizing:border-box;
+                    `;
+
+                    document.body.appendChild(modal);
+                }
+
+                modal.innerHTML = `
+                    <div
+                        style="
+                            width:min(520px,100%);
+                            max-height:90vh;
+                            overflow-y:auto;
+                            background:#fff;
+                            border-radius:14px;
+                            padding:18px;
+                            box-sizing:border-box;
+                            box-shadow:0 10px 35px rgba(0,0,0,.3);
+                        "
+                        onclick="event.stopPropagation()">
+
+                        <div style="
+                            display:flex;
+                            align-items:center;
+                            justify-content:space-between;
+                            margin-bottom:15px;
+                        ">
+                            <strong style="
+                                font-size:18px;
+                                color:#2e7d32;
+                            ">
+                                ✏️ Editar publicação
+                            </strong>
+
+                            <button
+                                type="button"
+                                onclick="document.getElementById('editarPublicacaoFeedModal').remove()"
+                                style="
+                                    border:0;
+                                    background:transparent;
+                                    font-size:25px;
+                                    cursor:pointer;
+                                    color:#777;
+                                ">
+                                ×
+                            </button>
+                        </div>
+
+                        <label style="
+                            display:block;
+                            font-size:12px;
+                            font-weight:700;
+                            margin-bottom:5px;
+                        ">
+                            Título
+                        </label>
+
+                        <input
+                            id="editar-feed-titulo"
+                            type="text"
+                            value="${String(publicacao.titulo || '').replace(/"/g, '&quot;')}"
+                            style="
+                                width:100%;
+                                box-sizing:border-box;
+                                padding:10px;
+                                border:1px solid #ccc;
+                                border-radius:8px;
+                                margin-bottom:12px;
+                                font-size:14px;
+                            "
+                        >
+
+                        <label style="
+                            display:block;
+                            font-size:12px;
+                            font-weight:700;
+                            margin-bottom:5px;
+                        ">
+                            Conteúdo
+                        </label>
+
+                        <textarea
+                            id="editar-feed-conteudo"
+                            style="
+                                width:100%;
+                                min-height:150px;
+                                box-sizing:border-box;
+                                padding:10px;
+                                border:1px solid #ccc;
+                                border-radius:8px;
+                                margin-bottom:12px;
+                                font-family:inherit;
+                                font-size:14px;
+                                resize:vertical;
+                            ">${publicacao.conteudo || ''}</textarea>
+
+                        <label style="
+                            display:block;
+                            font-size:12px;
+                            font-weight:700;
+                            margin-bottom:5px;
+                        ">
+                            Tipo
+                        </label>
+
+                        <select
+                            id="editar-feed-tipo"
+                            style="
+                                width:100%;
+                                box-sizing:border-box;
+                                padding:10px;
+                                border:1px solid #ccc;
+                                border-radius:8px;
+                                margin-bottom:12px;
+                                font-size:14px;
+                            "
+                        >
+                            <option value="informacao">Informação</option>
+                            <option value="noticia">Notícia</option>
+                            <option value="anuncio">Anúncio</option>
+                            <option value="aviso">Aviso</option>
+                        </select>
+
+                        <label style="
+                            display:block;
+                            font-size:12px;
+                            font-weight:700;
+                            margin-bottom:5px;
+                        ">
+                            Imagem
+                        </label>
+
+                        <input
+                            id="editar-feed-imagem"
+                            type="text"
+                            value="${String(publicacao.imagem || '').replace(/"/g, '&quot;')}"
+                            placeholder="URL da imagem (opcional)"
+                            style="
+                                width:100%;
+                                box-sizing:border-box;
+                                padding:10px;
+                                border:1px solid #ccc;
+                                border-radius:8px;
+                                margin-bottom:15px;
+                                font-size:14px;
+                            "
+                        >
+
+                        <div style="
+                            display:flex;
+                            gap:8px;
+                            justify-content:flex-end;
+                        ">
+
+                            <button
+                                type="button"
+                                onclick="document.getElementById('editarPublicacaoFeedModal').remove()"
+                                style="
+                                    border:1px solid #ccc;
+                                    background:#fff;
+                                    border-radius:8px;
+                                    padding:10px 14px;
+                                    cursor:pointer;
+                                ">
+                                Cancelar
+                            </button>
+
+                            <button
+                                id="guardar-edicao-feed"
+                                type="button"
+                                onclick="guardarEdicaoPublicacaoFeed(${id})"
+                                style="
+                                    border:0;
+                                    background:#2e7d32;
+                                    color:#fff;
+                                    border-radius:8px;
+                                    padding:10px 16px;
+                                    cursor:pointer;
+                                    font-weight:700;
+                                ">
+                                💾 Guardar alterações
+                            </button>
+
+                        </div>
+
+                    </div>
+                `;
+
+                document.getElementById('editar-feed-tipo').value =
+                    publicacao.tipo || 'informacao';
+
+            } catch (error) {
+
+                console.error(
+                    'ERRO AO ABRIR EDIÇÃO DO FEED:',
+                    error
+                );
+
+                alert(
+                    error.message ||
+                    'Erro ao abrir edição da publicação.'
+                );
+            }
+        }
+
+
+        async function guardarEdicaoPublicacaoFeed(id) {
+
+            if (!utilizadorAtual || !utilizadorAtual.ehAdministrador) {
+                alert('Apenas o administrador pode editar publicações.');
                 return;
             }
 
-            const conteudo = prompt(
-                'Novo conteúdo da publicação:'
-            );
+            const titulo =
+                document.getElementById('editar-feed-titulo')?.value.trim();
 
-            if (conteudo === null || !conteudo.trim()) {
+            const conteudo =
+                document.getElementById('editar-feed-conteudo')?.value.trim();
+
+            const tipo =
+                document.getElementById('editar-feed-tipo')?.value ||
+                'informacao';
+
+            const imagem =
+                document.getElementById('editar-feed-imagem')?.value.trim();
+
+            if (!titulo) {
+                alert('O título é obrigatório.');
                 return;
+            }
+
+            if (!conteudo) {
+                alert('O conteúdo é obrigatório.');
+                return;
+            }
+
+            const botao =
+                document.getElementById('guardar-edicao-feed');
+
+            if (botao) {
+                botao.disabled = true;
+                botao.textContent = 'A guardar...';
             }
 
             try {
@@ -3200,10 +3474,10 @@ body.service-modal-open {
                                 utilizadorAtual.ownerToken
                         },
                         body: JSON.stringify({
-                            titulo: titulo.trim(),
-                            conteudo: conteudo.trim(),
-                            tipo: 'informacao',
-                            imagem: null
+                            titulo,
+                            conteudo,
+                            tipo,
+                            imagem: imagem || null
                         })
                     }
                 );
@@ -3212,18 +3486,49 @@ body.service-modal-open {
 
                 if (!res.ok) {
                     throw new Error(
-                        dados.erro || 'Erro ao editar publicação.'
+                        dados.erro ||
+                        'Erro ao guardar publicação.'
                     );
+                }
+
+                const modal =
+                    document.getElementById(
+                        'editarPublicacaoFeedModal'
+                    );
+
+                if (modal) {
+                    modal.remove();
                 }
 
                 await carregarGestaoFeed();
                 await carregarFeedStartupAgro();
+                await carregarPublicacoesMercado();
+
+                alert(
+                    dados.mensagem ||
+                    'Publicação atualizada com sucesso.'
+                );
 
             } catch (error) {
 
-                alert(error.message || 'Erro ao editar publicação.');
+                console.error(
+                    'ERRO AO GUARDAR EDIÇÃO DO FEED:',
+                    error
+                );
+
+                alert(
+                    error.message ||
+                    'Erro ao guardar publicação.'
+                );
+
+                if (botao) {
+                    botao.disabled = false;
+                    botao.textContent =
+                        '💾 Guardar alterações';
+                }
             }
         }
+
 
 
         // ============================================================
@@ -3659,6 +3964,8 @@ body.service-modal-open {
         const feed = await resFeed.json();
         const produtos = await resProdutos.json();
         const precisos = await resPrecisos.json();
+        produtosAtuais = produtos;
+        window.precisosAtuais = precisos;
 
         if (!resFeed.ok || !resProdutos.ok || !resPrecisos.ok ||
             !Array.isArray(feed) ||
@@ -3680,8 +3987,9 @@ body.service-modal-open {
                        p.tipo === 'aviso' ? '⚠️' : 'ℹ️'
             })),
 
-            ...produtos.map(p => ({
+            ...produtos.map((p, indice) => ({
                 tipo: 'produto',
+                indice,
                 data: p.data,
                 nome: p.produto || 'Produto',
                 autor: p.vendedor || 'Vendedor',
@@ -3689,8 +3997,9 @@ body.service-modal-open {
                 icone: '🌾'
             })),
 
-            ...precisos.map(n => ({
+            ...precisos.map((n, indice) => ({
                 tipo: 'necessidade',
+                indice,
                 data: n.data,
                 nome: n.produtoDesejado || 'Necessidade',
                 autor: n.comprador || 'Comprador',
@@ -3715,7 +4024,29 @@ body.service-modal-open {
             const data = p.data ? formatarDataPublicacao(p.data) : '';
 
             return `
-                <div onclick="${p.tipo === 'feed' ? `abrirPublicacaoFeed(${p.id})` : ''}" style="display:flex;align-items:center;gap:7px;padding:7px 8px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;${p.tipo === 'feed' ? 'cursor:pointer;' : ''}">
+                <div
+                    onclick="${
+                        p.tipo === 'feed'
+                            ? `abrirPublicacaoFeed(${p.id})`
+                            : p.tipo === 'produto'
+                                ? `abrirDetalhesProduto(${p.indice})`
+                                : `abrirDetalhesNecessidade(${p.indice})`
+                    }"
+                    role="button"
+                    tabindex="0"
+                    style="
+                        display:flex;
+                        align-items:center;
+                        gap:7px;
+                        width:100%;
+                        box-sizing:border-box;
+                        padding:7px 8px;
+                        border:1px solid #e5e5e5;
+                        border-radius:8px;
+                        background:#fff;
+                        cursor:pointer;
+                    "
+                >
                     <span style="width:22px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#f3f3f3;font-size:13px;">
                         ${p.icone}
                     </span>
@@ -4077,19 +4408,6 @@ body.service-modal-open {
 
             const contacto = p.contacto || 'Não informado';
 
-            let contactoHtml = '';
-
-            if (contacto !== 'Não informado') {
-                const numeros = contacto.replace(/[^0-9+]/g, '');
-
-                if (numeros) {
-                    contactoHtml = `
-                        <a class="product-contact-button" href="tel:${numeros}">
-                            📞 Contactar produtor
-                        </a>
-                    `;
-                }
-            }
 
             modal.innerHTML = `
                 <div class="product-modal-content" onclick="event.stopPropagation()">
@@ -4119,31 +4437,107 @@ body.service-modal-open {
                             utilizadorAtual.ownerToken &&
                             p.owner_token === utilizadorAtual.ownerToken
                             ? `
-                                <button
-                                    type="button"
-                                    onclick="editarMeuProduto(${p.id})"
-                                    style="width:100%; margin:0 0 10px; padding:13px; border:1px solid var(--primary); border-radius:10px; background:#fff; color:var(--primary); font-weight:700; cursor:pointer;">
-                                    ✏️ Editar meu produto
-                                </button>
+                                <div
+                                    style="
+                                        display:flex;
+                                        align-items:center;
+                                        gap:6px;
+                                        margin:0 0 16px;
+                                    "
+                                >
+                                    <button
+                                        type="button"
+                                        onclick="event.preventDefault(); event.stopPropagation(); editarMeuProduto(${p.id}); return false;"
+                                        title="Editar"
+                                        aria-label="Editar produto"
+                                        style="
+                                            width:32px;
+                                            height:32px;
+                                            padding:0;
+                                            border:1px solid #ddd;
+                                            border-radius:6px;
+                                            background:#fff;
+                                            font-size:14px;
+                                            cursor:pointer;
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                        "
+                                    >✏️</button>
 
-                                <button
-                                    type="button"
-                                    onclick="removerMeuProduto(${p.id})"
-                                    style="width:100%; margin:0 0 16px; padding:13px; border:1px solid #c62828; border-radius:10px; background:#fff; color:#c62828; font-weight:700; cursor:pointer;">
-                                    🗑️ Eliminar meu produto
-                                </button>
+                                    <button
+                                        type="button"
+                                        onclick="event.preventDefault(); event.stopPropagation(); removerMeuProduto(${p.id}); return false;"
+                                        title="Eliminar"
+                                        aria-label="Eliminar produto"
+                                        style="
+                                            width:32px;
+                                            height:32px;
+                                            padding:0;
+                                            border:1px solid #ddd;
+                                            border-radius:6px;
+                                            background:#fff;
+                                            font-size:14px;
+                                            cursor:pointer;
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                        "
+                                    >🗑️</button>
+
+                                    ${
+                                        p.contacto
+                                        ? `
+                                            <a
+                                                href="tel:${String(p.contacto).replace(/[^0-9+]/g, '')}"
+                                                onclick="event.stopPropagation();"
+                                                title="Contactar produtor"
+                                                aria-label="Contactar produtor"
+                                                style="
+                                                    width:32px;
+                                                    height:32px;
+                                                    padding:0;
+                                                    border:1px solid #ddd;
+                                                    border-radius:6px;
+                                                    background:#fff;
+                                                    color:inherit;
+                                                    text-decoration:none;
+                                                    font-size:14px;
+                                                    cursor:pointer;
+                                                    display:flex;
+                                                    align-items:center;
+                                                    justify-content:center;
+                                                "
+                                            >📞</a>
+                                          `
+                                        : ''
+                                    }
+                                </div>
                               `
                             : ''
                         }
+
 
                         ${
                             utilizadorAtual.ehAdministrador
                             ? `
                                 <button
                                     type="button"
-                                    onclick="removerProdutoComoAdministrador(${p.id})"
-                                    style="width:100%; margin:0 0 16px; padding:13px; border:1px solid #c62828; border-radius:10px; background:#fff; color:#c62828; font-weight:700; cursor:pointer;">
-                                    🗑️ Eliminar cadastro deste produto
+                                    onclick="removerProdutoComoAdministrador(${p.id}); event.stopPropagation();"
+                                    title="Eliminar cadastro"
+                                    style="
+                                        flex:0 0 auto;
+                                        border:1px solid #ddd;
+                                        border-radius:6px;
+                                        padding:6px 8px;
+                                        background:#fff;
+                                        color:#c62828;
+                                        font-size:12px;
+                                        cursor:pointer;
+                                        margin-bottom:16px;
+                                    "
+                                >
+                                    🗑️
                                 </button>
                               `
                             : ''
@@ -4173,7 +4567,6 @@ body.service-modal-open {
 
                         </div>
 
-                        ${contactoHtml}
 
                         <!-- COMENTÁRIOS DO PRODUTO -->
                         <div style="
@@ -4288,82 +4681,77 @@ body.service-modal-open {
         }
 
         async function editarMeuProduto(id) {
+
+            if (!utilizadorAtual || !utilizadorAtual.ownerToken) {
+                alert('Precisas de iniciar sessão para editar este produto.');
+                return false;
+            }
+
             const produto = produtosAtuais.find(
                 p => String(p.id) === String(id)
             );
 
             if (!produto) {
                 alert('Produto não encontrado.');
-                return;
+                return false;
             }
 
             if (
-                !utilizadorAtual ||
-                !utilizadorAtual.ownerToken ||
-                String(produto.owner_token) !==
-                    String(utilizadorAtual.ownerToken)
+                String(produto.owner_token || '') !==
+                String(utilizadorAtual.ownerToken || '')
             ) {
-                alert(
-                    'Não tens autorização para editar este produto.'
-                );
-                return;
+                alert('Não tens autorização para editar este produto.');
+                return false;
             }
 
-            // Fechar a janela de detalhes do produto.
-            fecharDetalhesProduto();
+            const idCampo =
+                document.getElementById('produtoEditandoId');
 
-            // Preencher o formulário com os dados atuais.
-            document.getElementById(
-                'produtoEditandoId'
-            ).value = produto.id;
+            const nomeCampo =
+                document.getElementById('produtoNome');
 
-            document.getElementById(
-                'produtoNome'
-            ).value = produto.produto || '';
+            const precoCampo =
+                document.getElementById('produtoPreco');
 
-            document.getElementById(
-                'produtoPreco'
-            ).value = produto.preco || '';
+            const qtdCampo =
+                document.getElementById('produtoQtd');
 
-            document.getElementById(
-                'produtoQtd'
-            ).value = produto.quantidade || '';
+            const provinciaCampo =
+                document.getElementById('provinciaVendedor');
 
-            document.getElementById(
-                'provinciaVendedor'
-            ).value = produto.provincia || '';
-
-            document.getElementById(
-                'contactoVendedor'
-            ).value = produto.contacto || '';
-
-            // Não reutilizar automaticamente a imagem antiga.
-            document.getElementById('cameraInput').value = '';
-            document.getElementById('galleryInput').value = '';
-
-            const botao =
-                document.getElementById(
-                    'botaoSubmitProduto'
-                );
-
-            const cancelar =
-                document.getElementById(
-                    'botaoCancelarEdicaoProduto'
-                );
+            const contactoCampo =
+                document.getElementById('contactoVendedor');
 
             const formulario =
-                document.getElementById(
-                    'formPublicarProduto'
-                );
+                document.getElementById('formPublicarProduto');
 
             const toggle =
-                document.getElementById(
-                    'togglePublicarProduto'
-                );
+                document.getElementById('togglePublicarProduto');
+
+            const botao =
+                document.getElementById('botaoSubmitProduto');
+
+            const cancelar =
+                document.getElementById('botaoCancelarEdicaoProduto');
+
+            if (idCampo) idCampo.value = produto.id;
+            if (nomeCampo) nomeCampo.value = produto.produto || '';
+            if (precoCampo) precoCampo.value = produto.preco || '';
+            if (qtdCampo) qtdCampo.value = produto.quantidade || '';
+            if (provinciaCampo) provinciaCampo.value = produto.provincia || '';
+            if (contactoCampo) contactoCampo.value = produto.contacto || '';
+
+            const cameraInput =
+                document.getElementById('cameraInput');
+
+            const galleryInput =
+                document.getElementById('galleryInput');
+
+            if (cameraInput) cameraInput.value = '';
+            if (galleryInput) galleryInput.value = '';
 
             if (botao) {
-                botao.textContent =
-                    '💾 Guardar alterações';
+                botao.textContent = '💾 Guardar alterações';
             }
 
             if (cancelar) {
@@ -4378,15 +4766,19 @@ body.service-modal-open {
                 toggle.classList.add('open');
             }
 
-            // Levar o utilizador diretamente para o formulário.
-            if (formulario) {
-                formulario.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        }
+            fecharDetalhesProduto();
 
+            setTimeout(() => {
+                if (formulario) {
+                    formulario.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }, 100);
+
+            return false;
+        }
 
         function cancelarEdicaoProduto() {
             const form = document.getElementById('formProduto');
@@ -4959,46 +5351,111 @@ body.service-modal-open {
 
                         </div>
 
-                        ${
-                            p.contacto
-                            ? `
-                                <a
-                                    class="product-contact-button"
-                                    href="tel:${String(p.contacto).replace(/[^0-9+]/g, '')}">
-                                    📞 Contactar comprador
-                                </a>
-                              `
-                            : ''
-                        }
 
                         ${
                             podeEliminar
                             ? `
-                                <button
-                                    type="button"
-                                    onclick="editarMinhaNecessidade(${p.id})"
-                                    style="width:100%; margin-top:12px; padding:13px; border:1px solid #1976d2; border-radius:10px; background:#fff; color:#1976d2; font-weight:700; cursor:pointer;">
-                                    ✏️ Editar minha necessidade
-                                </button>
+                                <div
+                                    style="
+                                        display:flex;
+                                        align-items:center;
+                                        gap:6px;
+                                        margin-top:12px;
+                                    "
+                                >
+                                    <button
+                                        type="button"
+                                        onclick="event.preventDefault(); event.stopPropagation(); editarMinhaNecessidade(${p.id}); return false;"
+                                        title="Editar"
+                                        aria-label="Editar necessidade"
+                                        style="
+                                            width:32px;
+                                            height:32px;
+                                            padding:0;
+                                            border:1px solid #ddd;
+                                            border-radius:6px;
+                                            background:#fff;
+                                            font-size:14px;
+                                            cursor:pointer;
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                        "
+                                    >✏️</button>
 
-                                <button
-                                    type="button"
-                                    onclick="removerMinhaNecessidade(${p.id})"
-                                    style="width:100%; margin-top:10px; padding:13px; border:1px solid #c62828; border-radius:10px; background:#fff; color:#c62828; font-weight:700; cursor:pointer;">
-                                    🗑️ Eliminar minha necessidade
-                                </button>
+                                    <button
+                                        type="button"
+                                        onclick="event.preventDefault(); event.stopPropagation(); removerMinhaNecessidade(${p.id}); return false;"
+                                        title="Eliminar"
+                                        aria-label="Eliminar necessidade"
+                                        style="
+                                            width:32px;
+                                            height:32px;
+                                            padding:0;
+                                            border:1px solid #ddd;
+                                            border-radius:6px;
+                                            background:#fff;
+                                            font-size:14px;
+                                            cursor:pointer;
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                        "
+                                    >🗑️</button>
+
+                                    ${
+                                        p.contacto
+                                        ? `
+                                            <a
+                                                href="tel:${String(p.contacto).replace(/[^0-9+]/g, '')}"
+                                                onclick="event.stopPropagation();"
+                                                title="Contactar comprador"
+                                                aria-label="Contactar comprador"
+                                                style="
+                                                    width:32px;
+                                                    height:32px;
+                                                    padding:0;
+                                                    border:1px solid #ddd;
+                                                    border-radius:6px;
+                                                    background:#fff;
+                                                    color:inherit;
+                                                    text-decoration:none;
+                                                    font-size:14px;
+                                                    cursor:pointer;
+                                                    display:flex;
+                                                    align-items:center;
+                                                    justify-content:center;
+                                                "
+                                            >📞</a>
+                                          `
+                                        : ''
+                                    }
+                                </div>
                               `
                             : ''
                         }
+
 
                         ${
                             utilizadorAtual.ehAdministrador
                             ? `
                                 <button
                                     type="button"
-                                    onclick="removerNecessidadeComoAdministrador(${p.id})"
-                                    style="width:100%; margin-top:12px; padding:13px; border:1px solid #c62828; border-radius:10px; background:#fff; color:#c62828; font-weight:700; cursor:pointer;">
-                                    🗑️ Eliminar cadastro desta necessidade
+                                    onclick="removerNecessidadeComoAdministrador(${p.id}); event.stopPropagation();"
+                                    title="Eliminar cadastro"
+                                    style="
+                                        flex:0 0 auto;
+                                        border:1px solid #ddd;
+                                        border-radius:6px;
+                                        padding:6px 8px;
+                                        background:#fff;
+                                        color:#c62828;
+                                        font-size:12px;
+                                        cursor:pointer;
+                                        margin-bottom:12px;
+                                    "
+                                >
+                                    🗑️
                                 </button>
                               `
                             : ''
