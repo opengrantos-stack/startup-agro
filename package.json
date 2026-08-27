@@ -8,9 +8,12 @@
   },
   "dependencies": {
     "@google/genai": "^2.19.0",
+    "@reown/appkit": "^1.8.23",
+    "@reown/appkit-adapter-ethers": "^1.8.23",
     "@supabase/supabase-js": "^2.112.3",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
+    "ethers": "^6.17.0",
     "express": "^4.19.2",
     "multer": "^1.4.5-lts.1",
     "openai": "^7.7.0",
