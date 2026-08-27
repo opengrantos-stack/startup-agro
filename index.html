@@ -4671,7 +4671,7 @@ body.service-modal-open {
         }
 
         function alternarPublicacaoProduto() {
-            const formulario = document.getElementById('formPublicarProduto');
+            const formulario = document.getElementById('formProduto');
             const botao = document.getElementById('togglePublicarProduto');
 
             if (!formulario || !botao) return;
@@ -4681,6 +4681,8 @@ body.service-modal-open {
         }
 
         async function editarMeuProduto(id) {
+
+            console.log('EDITAR PRODUTO:', id);
 
             if (!utilizadorAtual || !utilizadorAtual.ownerToken) {
                 alert('Precisas de iniciar sessão para editar este produto.');
@@ -4704,6 +4706,22 @@ body.service-modal-open {
                 return false;
             }
 
+            // Fechar o modal de detalhes primeiro.
+            fecharDetalhesProduto();
+
+            // Abrir a JANELA correta do formulário.
+            if (typeof abrirJanelaServico === 'function') {
+                abrirJanelaServico('janelaPublicarProduto');
+            } else {
+                const janela =
+                    document.getElementById('janelaPublicarProduto');
+
+                if (janela) {
+                    janela.classList.remove('hidden');
+                }
+            }
+
+            // Preencher o formulário.
             const idCampo =
                 document.getElementById('produtoEditandoId');
 
@@ -4722,18 +4740,6 @@ body.service-modal-open {
             const contactoCampo =
                 document.getElementById('contactoVendedor');
 
-            const formulario =
-                document.getElementById('formPublicarProduto');
-
-            const toggle =
-                document.getElementById('togglePublicarProduto');
-
-            const botao =
-                document.getElementById('botaoSubmitProduto');
-
-            const cancelar =
-                document.getElementById('botaoCancelarEdicaoProduto');
-
             if (idCampo) idCampo.value = produto.id;
             if (nomeCampo) nomeCampo.value = produto.produto || '';
             if (precoCampo) precoCampo.value = produto.preco || '';
@@ -4750,6 +4756,12 @@ body.service-modal-open {
             if (cameraInput) cameraInput.value = '';
             if (galleryInput) galleryInput.value = '';
 
+            const botao =
+                document.getElementById('botaoSubmitProduto');
+
+            const cancelar =
+                document.getElementById('botaoCancelarEdicaoProduto');
+
             if (botao) {
                 botao.textContent = '💾 Guardar alterações';
             }
@@ -4758,24 +4770,7 @@ body.service-modal-open {
                 cancelar.style.display = 'block';
             }
 
-            if (formulario) {
-                formulario.classList.add('open');
-            }
-
-            if (toggle) {
-                toggle.classList.add('open');
-            }
-
-            fecharDetalhesProduto();
-
-            setTimeout(() => {
-                if (formulario) {
-                    formulario.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            }, 100);
+            console.log('FORMULÁRIO DE PRODUTO ABERTO PARA EDIÇÃO:', produto.id);
 
             return false;
         }
@@ -5571,67 +5566,105 @@ body.service-modal-open {
         }
 
         function editarMinhaNecessidade(id) {
+
+            console.log('EDITAR NECESSIDADE:', id);
+
             const p = window.precisosAtuais?.find(item =>
                 Number(item.id) === Number(id)
             );
 
             if (!p) {
                 alert('Não foi possível encontrar esta necessidade.');
-                return;
+                return false;
             }
 
             if (
                 !utilizadorAtual ||
                 !utilizadorAtual.ownerToken ||
-                p.owner_token !== utilizadorAtual.ownerToken
+                String(p.owner_token || '') !==
+                String(utilizadorAtual.ownerToken || '')
             ) {
                 alert('Não tens autorização para editar esta necessidade.');
-                return;
+                return false;
             }
 
-            // Fechar o modal de detalhes.
+            // Fechar o modal de detalhes primeiro.
             fecharDetalhesNecessidade();
 
-            // Identificar a necessidade que está sendo editada.
-            document.getElementById('necessidadeEditandoId').value = p.id;
+            // Abrir a JANELA correta do formulário.
+            if (typeof abrirJanelaServico === 'function') {
+                abrirJanelaServico('janelaPublicarNecessidade');
+            } else {
+                const janela =
+                    document.getElementById('janelaPublicarNecessidade');
 
-            // Preencher os campos atuais.
-            document.getElementById('produtoDesejado').value =
-                p.produtoDesejado || '';
-
-            document.getElementById('qtdDesejada').value =
-                p.quantidade || '';
-
-            document.getElementById('provinciaComprador').value =
-                p.provincia || '';
-
-            document.getElementById('contactoComprador').value =
-                p.contacto || '';
-
-            // Alterar o estado do formulário para edição.
-            document.getElementById('tituloBotaoNecessidade').textContent =
-                '✏️ Editar Necessidade de Compra';
-
-            document.getElementById('btnGuardarNecessidade').textContent =
-                'Guardar Alterações';
-
-            document.getElementById('btnCancelarEdicaoNecessidade').style.display =
-                'block';
-
-            // Abrir automaticamente o painel de preenchimento.
-            const formulario =
-                document.getElementById('formPublicarNecessidade');
-
-            if (formulario) {
-                formulario.classList.add('open');
+                if (janela) {
+                    janela.classList.remove('hidden');
+                }
             }
 
-            // Levar o utilizador até ao formulário.
-            document.getElementById('togglePublicarNecessidade')
-                .scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
+            // Preencher o formulário.
+            const idCampo =
+                document.getElementById('necessidadeEditandoId');
+
+            const produtoCampo =
+                document.getElementById('produtoDesejado');
+
+            const qtdCampo =
+                document.getElementById('qtdDesejada');
+
+            const provinciaCampo =
+                document.getElementById('provinciaComprador');
+
+            const contactoCampo =
+                document.getElementById('contactoComprador');
+
+            if (idCampo) idCampo.value = p.id;
+
+            if (produtoCampo) {
+                produtoCampo.value = p.produtoDesejado || '';
+            }
+
+            if (qtdCampo) {
+                qtdCampo.value = p.quantidade || '';
+            }
+
+            if (provinciaCampo) {
+                provinciaCampo.value = p.provincia || '';
+            }
+
+            if (contactoCampo) {
+                contactoCampo.value = p.contacto || '';
+            }
+
+            const botao =
+                document.getElementById('btnGuardarNecessidade');
+
+            const cancelar =
+                document.getElementById('btnCancelarEdicaoNecessidade');
+
+            const titulo =
+                document.getElementById('tituloBotaoNecessidade');
+
+            if (titulo) {
+                titulo.textContent =
+                    '✏️ Editar Necessidade de Compra';
+            }
+
+            if (botao) {
+                botao.textContent = 'Guardar Alterações';
+            }
+
+            if (cancelar) {
+                cancelar.style.display = 'block';
+            }
+
+            console.log(
+                'FORMULÁRIO DE NECESSIDADE ABERTO PARA EDIÇÃO:',
+                p.id
+            );
+
+            return false;
         }
 
         function cancelarEdicaoNecessidade() {
@@ -5748,7 +5781,7 @@ body.service-modal-open {
 
         function alternarPublicacaoNecessidade() {
             const formulario =
-                document.getElementById('formPublicarNecessidade');
+                document.getElementById('formPreciso');
 
             if (!formulario) return;
 
