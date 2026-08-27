@@ -7,6 +7,7 @@ const path = require('path');
 const multer = require('multer');
 const { Pool } = require('pg');
 const { createClient } = require('@supabase/supabase-js');
+const OpenAI = require('openai');
 
 function gerarPinHash(pin) {
     const salt = crypto.randomBytes(16).toString('hex');
@@ -2139,6 +2140,140 @@ app.post('/admin/feed-publicacoes', upload.single('imagem'), async (req, res) =>
 
         res.status(500).json({
             erro: 'Erro ao criar publicação.'
+        });
+    }
+});
+
+
+
+
+// ==============================
+// IA STARTUP-AGRO
+// Pesquisa nos dados da plataforma + Web
+// ==============================
+
+const { GoogleGenAI } = require('@google/genai');
+
+const gemini = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY
+});
+
+// ==============================
+// IA STARTUP-AGRO
+// Pesquisa nos dados da plataforma + Web
+// ==============================
+
+app.post('/api/ia/pesquisar', async (req, res) => {
+    try {
+        const pergunta = String(req.body.pergunta || '').trim();
+
+        if (!pergunta) {
+            return res.status(400).json({
+                erro: 'Informe uma pergunta.'
+            });
+        }
+
+        if (pergunta.length > 2000) {
+            return res.status(400).json({
+                erro: 'A pergunta não pode ultrapassar 2000 caracteres.'
+            });
+        }
+
+        const [produtos, necessidades, feed] = await Promise.all([
+            pool.query(`
+                SELECT id, vendedor, produto, preco, quantidade,
+                       provincia, contacto, data
+                FROM produtos
+                ORDER BY data DESC
+                LIMIT 50
+            `),
+
+            pool.query(`
+                SELECT id, comprador, produto_desejado,
+                       quantidade, provincia, contacto, data
+                FROM precisos
+                ORDER BY data DESC
+                LIMIT 50
+            `),
+
+            pool.query(`
+                SELECT id, titulo, conteudo, tipo,
+                       autor_nome AS "autorNome",
+                       autor_tipo AS "autorTipo",
+                       data
+                FROM feed_publicacoes
+                WHERE publica = TRUE
+                ORDER BY data DESC
+                LIMIT 30
+            `)
+        ]);
+
+        const contextoPlataforma = {
+            produtos: produtos.rows,
+            necessidades: necessidades.rows,
+            publicacoes: feed.rows
+        };
+
+        const prompt = `
+Tu és a IA oficial da Startup-Agro, uma plataforma agrícola de Angola.
+
+A tua função é ajudar vendedores, compradores e visitantes a encontrar
+informação agrícola útil.
+
+Tens acesso a:
+
+1. DADOS INTERNOS DA STARTUP-AGRO
+2. PESQUISA NA WEB ATRAVÉS DO GOOGLE SEARCH
+
+REGRAS:
+
+- Para perguntas sobre produtos, vendedores, preços, quantidades,
+  necessidades ou publicações da Startup-Agro, consulta primeiro os
+  dados internos fornecidos abaixo.
+- Para informações atuais, notícias, preços de mercado, agricultura,
+  clima, tendências, legislação ou qualquer informação que possa
+  existir fora da plataforma, utiliza a pesquisa Web.
+- Quando for útil, combina os dados internos com a Web.
+- Nunca inventes produtos, preços, vendedores, necessidades ou fontes.
+- Deixa claro quando uma informação vem da Startup-Agro e quando vem
+  da Web.
+- Se não encontrares informação suficiente, diz isso claramente.
+- Responde em português claro.
+- Considera especialmente o contexto agrícola de Angola.
+
+DADOS INTERNOS DA STARTUP-AGRO:
+
+${JSON.stringify(contextoPlataforma)}
+
+PERGUNTA DO UTILIZADOR:
+
+${pergunta}
+`;
+
+        const resposta = await gemini.models.generateContent({
+            model: 'gemini-3.6-flash',
+            contents: prompt,
+            config: {
+                tools: [
+                    {
+                        googleSearch: {}
+                    }
+                ]
+            }
+        });
+
+        res.json({
+            resposta: resposta.text
+        });
+
+    } catch (error) {
+        console.error(
+            'ERRO NA IA STARTUP-AGRO:',
+            error.message
+        );
+
+        res.status(500).json({
+            erro: 'Não foi possível processar a pesquisa da IA.'
         });
     }
 });

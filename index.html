@@ -5713,5 +5713,312 @@ window.addEventListener("load", function() {
 });
 </script>
 
+
+<!-- ==============================
+     IA STARTUP-AGRO
+     Funcionalidade opcional
+     ============================== -->
+
+<style>
+#startup-agro-ia-button {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 9998;
+    width: 54px;
+    height: 54px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    font-size: 25px;
+    cursor: grab;
+    background: #1f7a45;
+    color: white;
+    box-shadow: 0 4px 14px rgba(0,0,0,.22);
+    touch-action: none;
+    user-select: none;
+}
+
+#startup-agro-ia-button:hover {
+    transform: scale(1.04);
+}
+
+#startup-agro-ia-button:active {
+    cursor: grabbing;
+}
+
+
+#startup-agro-ia-panel {
+    display: none;
+    position: fixed;
+    right: 18px;
+    bottom: 78px;
+    width: min(390px, calc(100vw - 36px));
+    max-height: 70vh;
+    z-index: 9999;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.25);
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+#startup-agro-ia-header {
+    padding: 15px;
+    background: #1f7a45;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#startup-agro-ia-header strong {
+    font-size: 16px;
+}
+
+#startup-agro-ia-close {
+    border: none;
+    background: transparent;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+#startup-agro-ia-content {
+    padding: 15px;
+}
+
+#startup-agro-ia-pergunta {
+    width: 100%;
+    min-height: 85px;
+    box-sizing: border-box;
+    resize: vertical;
+    padding: 11px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+#startup-agro-ia-enviar {
+    width: 100%;
+    margin-top: 10px;
+    padding: 11px;
+    border: none;
+    border-radius: 10px;
+    background: #1f7a45;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#startup-agro-ia-enviar:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+
+#startup-agro-ia-resposta {
+    margin-top: 12px;
+    padding: 11px;
+    border-radius: 10px;
+    background: #f4f6f5;
+    white-space: pre-wrap;
+    line-height: 1.45;
+    font-size: 14px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+</style>
+
+<button
+    id="startup-agro-ia-button"
+    type="button"
+    onclick="abrirIAStartupAgro()">
+    🤖 IA Startup-Agro
+</button>
+
+<div id="startup-agro-ia-panel">
+
+    <div id="startup-agro-ia-header">
+        <strong>🤖 IA Startup-Agro</strong>
+
+        <button
+            id="startup-agro-ia-close"
+            type="button"
+            onclick="fecharIAStartupAgro()">
+            ×
+        </button>
+    </div>
+
+    <div id="startup-agro-ia-content">
+
+        <div style="font-size:13px;margin-bottom:10px;color:#555;">
+            Pergunte sobre produtos, necessidades, mercado agrícola
+            ou outros assuntos relacionados com a agricultura.
+        </div>
+
+        <textarea
+            id="startup-agro-ia-pergunta"
+            placeholder="Ex.: Que produtos agrícolas estão disponíveis atualmente?"
+        ></textarea>
+
+        <button
+            id="startup-agro-ia-enviar"
+            type="button"
+            onclick="perguntarIAStartupAgro()">
+            Perguntar à IA
+        </button>
+
+        <div
+            id="startup-agro-ia-resposta"
+            style="display:none;">
+        </div>
+
+    </div>
+</div>
+
+<script>
+
+// ==============================
+// BOTÃO IA MÓVEL
+// ==============================
+(function tornarBotaoIAMovel() {
+
+    const botao = document.getElementById('startup-agro-ia-button');
+
+    if (!botao) return;
+
+    let arrastando = false;
+    let deslocamentoX = 0;
+    let deslocamentoY = 0;
+
+    botao.addEventListener('pointerdown', function(evento) {
+
+        arrastando = true;
+
+        const rect = botao.getBoundingClientRect();
+
+        deslocamentoX = evento.clientX - rect.left;
+        deslocamentoY = evento.clientY - rect.top;
+
+        botao.setPointerCapture(evento.pointerId);
+
+        evento.preventDefault();
+    });
+
+    botao.addEventListener('pointermove', function(evento) {
+
+        if (!arrastando) return;
+
+        let esquerda = evento.clientX - deslocamentoX;
+        let topo = evento.clientY - deslocamentoY;
+
+        const largura = botao.offsetWidth;
+        const altura = botao.offsetHeight;
+
+        esquerda = Math.max(0, Math.min(
+            esquerda,
+            window.innerWidth - largura
+        ));
+
+        topo = Math.max(0, Math.min(
+            topo,
+            window.innerHeight - altura
+        ));
+
+        botao.style.left = esquerda + 'px';
+        botao.style.top = topo + 'px';
+        botao.style.right = 'auto';
+        botao.style.bottom = 'auto';
+    });
+
+    botao.addEventListener('pointerup', function(evento) {
+
+        if (!arrastando) return;
+
+        arrastando = false;
+
+        try {
+            botao.releasePointerCapture(evento.pointerId);
+        } catch (e) {}
+    });
+
+})();
+
+function abrirIAStartupAgro() {
+    const painel = document.getElementById('startup-agro-ia-panel');
+    painel.style.display = 'block';
+
+    setTimeout(() => {
+        document.getElementById('startup-agro-ia-pergunta').focus();
+    }, 50);
+}
+
+function fecharIAStartupAgro() {
+    document.getElementById('startup-agro-ia-panel').style.display = 'none';
+}
+
+async function perguntarIAStartupAgro() {
+
+    const campo = document.getElementById('startup-agro-ia-pergunta');
+    const botao = document.getElementById('startup-agro-ia-enviar');
+    const resposta = document.getElementById('startup-agro-ia-resposta');
+
+    const pergunta = campo.value.trim();
+
+    if (!pergunta) {
+        resposta.style.display = 'block';
+        resposta.textContent = 'Escreva uma pergunta primeiro.';
+        return;
+    }
+
+    botao.disabled = true;
+    botao.textContent = 'A IA está a processar...';
+
+    resposta.style.display = 'block';
+    resposta.textContent = 'A pesquisar...';
+
+    try {
+
+        const resultado = await fetch('/api/ia/pesquisar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                pergunta: pergunta
+            })
+        });
+
+        const dados = await resultado.json();
+
+        if (!resultado.ok) {
+            throw new Error(
+                dados.erro ||
+                'Não foi possível obter resposta da IA.'
+            );
+        }
+
+        resposta.textContent =
+            dados.resposta ||
+            'A IA não devolveu uma resposta.';
+
+    } catch (erro) {
+
+        console.error('IA STARTUP-AGRO:', erro);
+
+        resposta.textContent =
+            'A IA está temporariamente indisponível. ' +
+            'As restantes funcionalidades da Startup-Agro continuam disponíveis.';
+
+    } finally {
+
+        botao.disabled = false;
+        botao.textContent = 'Perguntar à IA';
+    }
+}
+</script>
+
+
 </body>
 </html>
