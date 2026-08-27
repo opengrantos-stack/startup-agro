@@ -773,10 +773,6 @@ body.service-modal-open {
             >
                 🔗 Conectar Wallet
             </button>
-            <div
-                id="walletStatus"
-                style="margin-top:8px; font-size:13px; color:#555;"
-            ></div>
         </header>
 
         <!-- ECRÃ DE LOGIN / CADASTRO -->
@@ -6577,7 +6573,7 @@ import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers@1.8.2
 (function () {
 
     const botao = document.getElementById('btnConnectWallet');
-    const status = document.getElementById('walletStatus');
+    const status = { textContent: '', style: { color: '' } };
 
     if (!botao || !status) return;
 
