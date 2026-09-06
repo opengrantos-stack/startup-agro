@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agro-store-v2';
+const CACHE_NAME = 'agro-store-v4';
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
@@ -6,8 +6,6 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll([
-                './',
-                './index.html',
                 './logo.png'
             ]);
         })
@@ -28,12 +26,8 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     event.respondWith(
-        fetch(event.request)
-            .then((response) => {
-                return response;
-            })
-            .catch(() => {
-                return caches.match(event.request);
-            })
+        event.request.mode === 'navigate'
+            ? fetch(event.request, { cache: 'no-store' })
+            : fetch(event.request).catch(() => caches.match(event.request))
     );
 });

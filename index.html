@@ -760,7 +760,7 @@ body.service-modal-open {
 </style>
 
 </head>
-<body>
+<body style="visibility:hidden;">
     <div class="app-container">
         <header>
             <img src="/logo.png" alt="Startup-Agro Logo" style="max-width: 120px; margin-bottom: 10px;">
@@ -776,7 +776,7 @@ body.service-modal-open {
         </header>
 
         <!-- ECRÃ DE LOGIN / CADASTRO -->
-        <div id="seccaoLogin" class="card-section">
+        <div id="seccaoLogin" class="card-section hidden">
             <h2>🔐 Entrar na Plataforma</h2>
 
             <div style="display:flex; gap:8px; margin-bottom:15px;">
@@ -2110,6 +2110,8 @@ body.service-modal-open {
 
         function aplicarSessao() {
 
+            document.body.style.visibility = "hidden";
+
             const salvo = localStorage.getItem('agro_user');
 
             if (!salvo) {
@@ -2120,6 +2122,7 @@ body.service-modal-open {
                     .classList.remove('hidden');
 
                 utilizadorAtual = null;
+                document.body.style.visibility = 'visible';
                 return;
             }
 
@@ -2141,6 +2144,7 @@ body.service-modal-open {
                     .classList.remove('hidden');
 
                 utilizadorAtual = null;
+                document.body.style.visibility = 'visible';
                 return;
             }
 
@@ -2181,9 +2185,9 @@ body.service-modal-open {
 
             atualizarPainelConta();
 
-            carregarProdutos();
-            carregarPrecisos();
             carregarPublicacoesMercado();
+
+            document.body.style.visibility = "visible";
         }
 
 
@@ -5888,9 +5892,9 @@ body.service-modal-open {
         }
 
 
-        window.onload = () => {
+        document.addEventListener('DOMContentLoaded', () => {
             aplicarSessao();
-        };
+        });
     </script>
   <script>
     if ("serviceWorker" in navigator) {
